@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+      - "2345:2345"
+    volumes:
+      - ./:/app
+    networks:
+      - internal
+  db:
+    image: groonga/pgroonga:latest-alpine-16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+      - ./stuff/TMDB_movie_dataset_v11.csv:/stuff/TMDB_movie_dataset_v11.csv
+      - ./stuff/Torrents.csv:/stuff/Torrents.csv
+networks:
+  internal:
+    driver: bridge

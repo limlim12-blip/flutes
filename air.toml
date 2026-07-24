@@ -1,0 +1,18 @@
+root = "."
+tmp_dir = ".tmp"
+
+[build]
+# This matches your working command exactly
+cmd = "go build -o ./.tmp/main ./cmd/lim"
+bin = "./.tmp/main"
+
+# Simple execution first to verify Air works. 
+# We remove Delve for one run to prove Air is the problem.
+full_bin = "./.tmp/main"
+
+include_dir = ["cmd", "middleware", "models", "pkg", "routers", "service"]
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["assets", "tmp", "dist"]
+
+[log]
+time = true
