@@ -1,5 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pg_prewarm;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE EXTENSION IF NOT EXISTS pgroonga;
 CREATE TABLE IF NOT EXISTS tmdb_movie_dataset_v11 (
 	id int4 NULL,
 	title text NULL,
@@ -45,12 +45,24 @@ CREATE TABLE IF NOT EXISTS torrents (
 set pg_trgm.similarity_threshold = 0.5;
 COPY torrents FROM '/stuff/Torrents.csv' WITH (FORMAT csv, HEADER true, DELIMITER ',');
 CREATE INDEX idx_trgm_name ON torrents USING gin (name gin_trgm_ops);
-CREATE INDEX idx_torrents_pgroonga ON torrents USING pgroonga (name);
 
 CREATE TABLE IF NOT EXISTS torrent_match (
 	infohash varchar(45) NULL,
 	"name" varchar(255) NULL,
 	match_name text null,
-	match_id int null,
+	match_id int null
 );
 
+COPY torrent_match (infohash, "name", match_name, match_id) 
+FROM '/stuff/torrent_match.csv' 
+WITH (
+    FORMAT csv, 
+    HEADER true, 
+    DELIMITER ','
+);
+CREATE TABLE public.torrent_content (
+	infohash varchar(45) NULL,
+	torrent_name varchar(255) NULL,
+	content_name text null,
+	size_bytes int8 null
+)

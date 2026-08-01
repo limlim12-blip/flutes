@@ -34,6 +34,7 @@ stuff/
 .tmp/
 dist/
 bin/
+tor/
 
 # Editor/IDE
 # .idea/

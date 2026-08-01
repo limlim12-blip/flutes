@@ -1,36 +1,21 @@
 services:
-  # api:
-  #   build:
-  #     context: ./
-  #     dockerfile: Dockerfile
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   ports:
-  #     - "8081:8080"
-  #     - "2345:2345"
-  #   volumes:
-  #     - ./:/app
-  #   networks:
-  #     - internal
-  #   restart: always
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 6G
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+      - "2345:2345"
+    volumes:
+      - ./:/app
+    networks:
+      - internal
   db:
     image: groonga/pgroonga:latest-alpine-16
     shm_size: 1g
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
     ports:
       - "5432:5432"
     volumes:

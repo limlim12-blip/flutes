@@ -13,8 +13,11 @@ RUN go install github.com/air-verse/air@latest
 
 # Copy go mod and sum files and install dependencies
 COPY go.mod go.sum ./
+COPY pkg/ ./pkg/
+
 RUN go mod download
 
+COPY ./cmd/ ./cmd/
 # Switch to root user (if necessary, though it should work, do it only for development purposes)
 USER root
 
@@ -23,4 +26,6 @@ EXPOSE 2345
 EXPOSE 8080
 
 # Run air for live-reload. The -c flag is used to specify the configuration file
-CMD ["air", "-c", "air.toml"]
+RUN go build -o /scraper ./cmd/data/
+
+CMD ["/scraper"]
