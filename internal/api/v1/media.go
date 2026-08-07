@@ -1,11 +1,10 @@
 package v1
 
 import (
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Media struct {
@@ -14,8 +13,15 @@ type Media struct {
 	ModTime string `json:"modtime"`
 	Size    int64  `json:"size"`
 }
+type MediaHandler struct {
+	Handler *APIHandler
+}
 
-func GetMedia(c *gin.Context) {
+func (h *MediaHandler) RegisterRoutes() {
+	courses := h.Handler.RouterGroup.Group("/media")
+	courses.GET("", h.GetMedia)
+}
+func (h *MediaHandler) GetMedia(c *gin.Context) {
 	entries, err := os.ReadDir("/app/stuff")
 	if err != nil {
 		log.Fatal(err)

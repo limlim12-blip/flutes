@@ -1,8 +1,8 @@
-package routers
+package api
 
 import (
+	"lim/internal/api/v1"
 	"lim/pkg/gintemplrenderer"
-	"lim/routers/api/v1"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,9 +32,14 @@ func InitRouter() *gin.Engine {
 
 	}
 	//api
+	api_v1 := r.Group("/v1")
+	app := &v1.APIHandler{RouterGroup: api_v1}
+
+	mediaHandler := &v1.MediaHandler{Handler: app}
+	mediaHandler.RegisterRoutes()
+
 	apiv1 := r.Group("/api/v1")
 	{
-		apiv1.GET("/media", v1.GetMedia)
 		apiv1.GET("/stream-video/*path", v1.GetVideoChunk)
 	}
 	return r

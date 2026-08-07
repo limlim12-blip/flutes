@@ -2,22 +2,14 @@ package main
 
 import (
 	"database/sql"
-	"encoding/csv"
-	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
+	"sync"
+	"sync/atomic"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"log"
-	"net/http"
-	"os"
-	"sort"
-	"sync"
-	"time"
-
-	PTN "github.com/middelink/go-parse-torrent-name"
 )
 
 type Status string
@@ -43,302 +35,182 @@ type Movie struct {
 
 // https://stackoverflow.com/questions/70339777/fetching-csv-data-using-golang
 // https://stackoverflow.com/questions/50421449/golang-write-new-column-of-csv
-type Torrent struct {
-	Infohash    string
-	ContentName string
-}
+/*
+SELECT infohash, content_name, title
+
+DELETE FROM movie_torrents
+WHERE content_name ~ '無修正|アダルト|エロ|ポルノ|AV女優|盗撮|素人|人妻|巨乳|痴漢|熟女|モザイク破壊'
+   OR title ~ '無修正|アダルト|エロ|ポルノ|AV女優|盗撮|素人|人妻|巨乳|痴漢|熟女|モザイク破壊';
+
+DELETE FROM movie_torrents
+WHERE content_name ~* '(FC2-PPV|FC2PPV|Caribbeancom|1pondo|10musume|Heydouga|pacopacomama)';
+
+DELETE FROM movie_torrents
+WHERE content_name ~ '色情|无码|有码|步兵|骑兵|女优|三级片|乱伦|强奸|轮奸|偷拍|淫秽|巨乳|萝莉'
+   OR title ~ '色情|无码|有码|步兵|骑兵|女优|三级片|乱伦|强奸|轮奸|偷拍|淫秽|巨乳|萝莉';
+
+DELETE FROM movie_torrents
+WHERE LOWER(content_name) SIMILAR TO '%(porn|xxx|anal|sex|nsfw|uncensored|jav|milf|gangbang|teen|boudoir|playboy|penthouse|brazzers|realitykings|naughtyamerica)%';
+
+DELETE FROM movie_torrents
+WHERE LOWER(content_name) SIMILAR TO '%(repack|cracked|keygen|patch|activation|trainer|flac|mp3|discography|album|epub|pdf|comic|cbr|cbz|android|apk|ios|windows|office)%';
+*/
 
 func main() {
+	// info, _ := PTN.Parse("DS9 S02 AI_Upscale-1080p")
+	// fmt.Printf("%#v", info)
 	matching()
+
 }
+
+type match struct {
+	torrentName string
+	contentName string
+	infohash    string
+	size_bytes  int
+	score       float64
+}
+type pack struct {
+	tmdbTitle string
+	tmdbID    int
+	year      string
+}
+
 func matching() {
 	conn := "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable&options=-c%20pg_trgm.similarity_threshold=0.5"
-	db, err := sql.Open("postgres", conn)
+	db, err := sql.Open("pgx", conn)
 	if err != nil {
 		log.Printf("%v", err)
 	}
 	defer db.Close()
-	db.SetMaxOpenConns(20)
-	db.SetMaxIdleConns(5)
-	infos, err := db.Query(`SELECT infohash, torrent_name from  movie_torrents where LENGTH(title) < 4`)
+	db.SetMaxOpenConns(30)
+	db.SetMaxIdleConns(30)
+	if _, err = db.Exec("SELECT pg_prewarm('idx_movie_torrents_content_trgm');"); err != nil {
+		log.Printf("%v", err)
+	}
+	if _, err = db.Exec("SELECT pg_prewarm('idx_movie_torrents_title_trgm');"); err != nil {
+		log.Printf("%v", err)
+	}
+	if _, err = db.Exec("SELECT pg_prewarm('idx_movie_torrents_torrent_name_trgm');"); err != nil {
+		log.Printf("%v", err)
+	}
+	log.Println("stato")
+
+	titles, err := db.Query(`SELECT t.title, t.id, COALESCE(EXTRACT(YEAR FROM t.release_date)::text, '') AS release_year
+		FROM tmdb_movie_dataset_v11 t
+		WHERE t.title IS NOT NULL 
+		AND t.adult = false
+		AND NOT EXISTS (
+		  SELECT 1 
+		  FROM torrent_match_movie m 
+		  WHERE m.match_id = t.id
+		)
+		ORDER BY t.popularity DESC;`)
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	defer infos.Close()
-	count := 0
-	sem := make(chan Torrent, 300)
+	sem := make(chan pack, 10000)
+	var count atomic.Int64
+	var notFound atomic.Int64
 	var wg sync.WaitGroup
-	batchSize := 100
-	//NOTE: chan = good distribute resources for goroutine
-	for _ = range 20 {
+	log.Println("stato1")
+
+	for _ = range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			infohashes := make([]string, 0, batchSize)
-			contentNames := make([]string, 0, batchSize)
-			titles := make([]string, 0, batchSize)
-			seasons := make([]int, 0, batchSize)
-			episodes := make([]int, 0, batchSize)
-			years := make([]int, 0, batchSize)
-			resolutions := make([]string, 0, batchSize)
-			codecs := make([]string, 0, batchSize)
-			args := make([]any, 0, len(infohashes)*8)
-			flush := func() {
-				if len(infohashes) == 0 {
+			for task := range sem {
+				var sb strings.Builder
+				year := task.year
+				if year == "" {
+					year = "0000"
+				}
+				tmdbTitle := task.tmdbTitle
+				tmdbID := task.tmdbID
+				matchRows, err := db.Query(`
+				SELECT *
+				FROM (
+					SELECT 
+						torrent_name,
+						content_name, 
+						infohash,
+						size_bytes,
+						(
+							similarity(title, $1) + 
+							CASE WHEN content_name LIKE '%' || $2 || '%' THEN 0.1 ELSE 0.0 END +
+							CASE WHEN torrent_name LIKE '%' || $2 || '%' THEN 0.2 ELSE 0.0 END
+						) AS score
+					FROM movie_torrents
+					WHERE (content_name % $1 OR title % $1)
+				) sub
+				WHERE score > 0.5
+				ORDER BY score DESC;
+			`, tmdbTitle, year)
+				if err != nil {
+					log.Println(err)
 					return
 				}
-
-				var sb strings.Builder
-				sb.WriteString(`update movie_torrents mt set 
-					title = t.title,
-					season = t.season,
-					episode = t.episode,
-					"year" = t.year,
-					resolution = t.resolution,
-					codec = t.codec
-					FROM (VALUES 
-					`)
-				for i := 0; i < len(infohashes); i++ {
-					if i > 0 {
-						sb.WriteString(`, `)
+				defer matchRows.Close()
+				var result []match
+				for matchRows.Next() {
+					var mat match
+					if err := matchRows.Scan(&mat.torrentName, &mat.contentName, &mat.infohash, &mat.size_bytes, &mat.score); err != nil {
+						fmt.Println(err)
+						continue
 					}
-					fmt.Fprintf(&sb, "($%d::text, $%d::text, $%d::text, $%d::int, $%d::int, $%d::int, $%d::text, $%d::text)",
-						i*8+1, i*8+2, i*8+3, i*8+4,
-						i*8+5, i*8+6, i*8+7, i*8+8,
-					)
-					args = append(args, infohashes[i], contentNames[i], titles[i], seasons[i], episodes[i], years[i], resolutions[i], codecs[i])
+					result = append(result, mat)
 				}
-				sb.WriteString(`) AS t(infohash, torrent_name, title, season, episode, year, resolution, codec) 
-                        WHERE mt.infohash = t.infohash AND mt.torrent_name = t.torrent_name`)
-				_, err = db.Exec(sb.String(), args...)
-				if err != nil {
-					log.Printf("Error: %v", err)
+				if err := matchRows.Err(); err != nil {
+					log.Printf("%v", err)
+					return
 				}
-				infohashes = infohashes[:0]
-				contentNames = contentNames[:0]
-				titles = titles[:0]
-				seasons = seasons[:0]
-				episodes = episodes[:0]
-				years = years[:0]
-				resolutions = resolutions[:0]
-				codecs = codecs[:0]
-				args = args[:0]
+				fmt.Fprintf(&sb, "{%d-%d}\n--- Searching for: [%d] %s (%s)----\n", count.Load(), notFound.Load(), tmdbID, tmdbTitle, year)
+				if len(result) == 0 {
+					sb.WriteString(" No torrents found\n")
+					notFound.Add(1)
+					_, err := db.Exec(
+						`INSERT INTO torrent_match_movie (infohash, content_name, match_name, match_id)
+					VALUES ($1, $2, $3, $4)
+					ON CONFLICT DO NOTHING;`,
+						sql.NullString{}, sql.NullString{}, tmdbTitle, tmdbID)
+					if err != nil {
+						log.Printf("1%v", err)
+					}
+				} else {
+					valueStrings := make([]string, 0, len(result))
+					valueArgs := make([]any, 0, len(result)*4)
+					for i, m := range result {
+						yearMatch := ""
+						if year != "0000" && strings.Contains(m.contentName, year) {
+							yearMatch = " [YEAR MATCH]"
+						}
+						fmt.Fprintf(&sb, "[%d] Score: %.3f | Hash: %s | %s - %s\n", i, m.score, m.infohash, m.contentName, yearMatch)
+						valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4))
+						valueArgs = append(valueArgs, m.infohash, m.contentName, tmdbTitle, tmdbID)
+					}
+					stmt := fmt.Sprintf(
+						`INSERT INTO torrent_match_movie (infohash, content_name, match_name, match_id)
+				VALUES %s
+				ON CONFLICT DO NOTHING;`,
+						strings.Join(valueStrings, ","))
+					_, err = db.Exec(stmt, valueArgs...)
+					if err != nil {
+						log.Printf("2%v", err)
+					}
+				}
+				log.Print(sb.String())
 			}
-			for task := range sem {
-				info, err := PTN.Parse(task.ContentName)
-				if err != nil {
-					continue
-				}
-				infohashes = append(infohashes, task.Infohash)
-				contentNames = append(contentNames, task.ContentName)
-				titles = append(titles, info.Title)
-				seasons = append(seasons, info.Season)
-				episodes = append(episodes, info.Episode)
-				years = append(years, info.Year)
-				resolutions = append(resolutions, info.Resolution)
-				codecs = append(codecs, info.Codec)
-				if len(infohashes) >= batchSize {
-					flush()
-				}
-				log.Printf("done - %s -%s", info.Title, task.Infohash)
-
-			}
-			flush()
 		}()
 	}
-
-	for infos.Next() {
-		count++
-		var rec Torrent
-		if err := infos.Scan(&rec.Infohash, &rec.ContentName); err != nil {
-			log.Printf("Scan error: %v", err)
+	for titles.Next() {
+		var rec pack
+		if err := titles.Scan(&rec.tmdbTitle, &rec.tmdbID, &rec.year); err != nil {
+			log.Printf("Error: %v", err)
 			continue
 		}
-		count++
+		count.Add(1)
 		sem <- rec
 	}
 	close(sem)
 	wg.Wait()
-	log.Println("DOne")
-
-}
-
-func doThingsWithCsv() {
-	ipf, err := os.Open("./stuff/Torrents.csv")
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	defer ipf.Close()
-	opf, err := os.Create("./stuff/orrents.csv")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer opf.Close()
-
-	r := csv.NewReader(ipf)
-	w := csv.NewWriter(opf)
-	defer w.Flush()
-	fields := make(map[string]int)
-	header, err := r.Read()
-	if err != nil {
-		fmt.Println(err)
-	}
-	for i, name := range header {
-		fields[name] = i
-	}
-	in, err := PTN.Parse("0.5.no.Otoko.EP01.1080p.AMZN.WEB-DL.DDP2.0.H.264-MagicStar.mkv")
-	if err != nil {
-		fmt.Println(err)
-	}
-	h, _ := get_header_and_values(in)
-	h = append(h, []string{"title_name", "name_name", "id", "original_language", "original_title", "original_name"}...)
-	header = append(header, h...)
-	w.Write(header)
-
-	fmt.Println(header)
-	fmt.Println(in)
-	fmt.Println("---------------------")
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	for {
-		// var status Status = Unknown
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(record[fields["name"]])
-		wg.Add(1)
-		go func(record []string) {
-			defer wg.Done()
-			info, err := PTN.Parse(record[fields["name"]])
-			// if info.Season != 0 || info.Episode != 0 {
-			// 	status = Tv
-			// }
-			if err != nil {
-				fmt.Println(err)
-			}
-			bytes, _ := json.Marshal(info)
-			fmt.Println(string(bytes))
-			_, v := get_header_and_values(info)
-			// title := url.QueryEscape(info.Title)
-			// taito := search_TMDB(title, status)
-			// if status == Tv && taito[0] == "" && taito[1] == "" {
-			// 	status = Unknown
-			// 	taito = search_TMDB(title, status)
-			// }
-			// v = append(v, taito...)
-			record = append(record, v...)
-			// fmt.Println(strings.Join(taito, ","))
-			mu.Lock()
-			w.Write(record)
-			mu.Unlock()
-			fmt.Println("---------------------")
-		}(record)
-	}
-	wg.Wait()
-
-}
-
-func search_TMDB(title string, status Status) []string {
-	url := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?query=%s&include_adult=true&page=1", status, title)
-	client := &http.Client{Timeout: 10 * time.Second}
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Add("accept", "application/json")
-	TMDB_API_KEY := os.Getenv("TMDB_API_KEY")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", TMDB_API_KEY))
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	body, err := io.ReadAll(resp.Body)
-	var response MovieResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	taito := response.Results[0]
-	return []string{taito.Title, taito.Name, fmt.Sprint(taito.ID), taito.OriginalLanguage, taito.OriginalTitle, taito.OriginalName}
-
-}
-
-/*
-NOTE: not that fun of a fact:
-To permanently stop developers from relying on a map's order, the Go team made it explicitly random starting in Go 1.0.
-Every time you start a range loop, Go picks a random memory bucket and a random offset to start from
-P/s: this is useless btw, cause the TorrentInfo struct dont have `omitempty`
-in defend, at first it have omitempty tho
-*/
-func get_header_and_values(info *PTN.TorrentInfo) ([]string, []string) {
-	header := []string{}
-	values := []string{}
-	jinfo, err := json.Marshal(info)
-	if err != nil {
-	}
-	var data map[string]any
-	if err := json.Unmarshal(jinfo, &data); err != nil {
-		fmt.Println(err)
-		return nil, nil
-	}
-	keys := make([]string, 0, len(data))
-	for k := range data {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	for _, k := range keys {
-		header = append(header, k)
-
-		val := fmt.Sprintf("%v", data[k])
-		if val == "<nil>" {
-			val = ""
-		}
-		values = append(values, val)
-	}
-
-	return header, values
-}
-
-func create_header() {
-	f, err := os.Open("./stuff/torrents.csv")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer f.Close()
-	r := csv.NewReader(f)
-	file, err := os.Create("./stuff/Torrents.csv")
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	defer file.Close()
-	writer := csv.NewWriter(file)
-
-	defer writer.Flush()
-
-	header := []string{
-		"infohash",
-		"name",
-		"size_bytes",
-		"created_unix",
-		"seeders",
-		"leechers",
-		"completed",
-		"scraped_date",
-		"published",
-	}
-	if err := writer.Write(header); err != nil {
-		return
-	}
-	records, err := r.ReadAll()
-	for _, record := range records {
-		if err := writer.Write(record); err != nil {
-			fmt.Println("error")
-		}
-
-	}
-
 }

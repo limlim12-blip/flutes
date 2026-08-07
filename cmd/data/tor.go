@@ -58,23 +58,27 @@ func tor() {
 	db.SetMaxOpenConns(20)
 	db.SetMaxIdleConns(5)
 	var infoHash []string
-	infohash, err := db.Query(`SELECT DISTINCT t.infohash, seeders FROM torrents t LEFT JOIN torrent_content tc ON t.infohash = tc.infohash where tc.infohash is null ORDER BY seeders desc`)
+	infohash, err := db.Query(`SELECT DISTINCT tc.infohash FROM torrent_content tc WHERE content_name IS NULL`)
 	if err != nil {
 		log.Printf("%v", err)
 	}
 	for infohash.Next() {
 		var hash string
-		var seeders int
-		if err := infohash.Scan(&hash, &seeders); err != nil {
+		if err := infohash.Scan(&hash); err != nil {
 			log.Printf("%v", err)
 		}
 		infoHash = append(infoHash, hash)
 	}
 	numClients := 40
-	os.RemoveAll("./tor/")
-	os.MkdirAll("./tor/", 0755)
 	var clients []*torrent.Client
 	for i := 0; i < numClients; i++ {
+		if err := os.RemoveAll(fmt.Sprintf("/tmp/tor%d", i)); err != nil {
+			log.Printf("Error: %v", err)
+		}
+		if err := os.MkdirAll(fmt.Sprintf("/tmp/tor%d", i), 0755); err != nil {
+			log.Printf("Error: %v", err)
+		}
+
 		cc := torrent.NewDefaultClientConfig()
 		cc.TotalHalfOpenConns = 1000
 		cc.DialRateLimiter = rate.NewLimiter(1000, 1200)
@@ -84,7 +88,7 @@ func tor() {
 		cc.MinDialTimeout = 2 * time.Second
 		cc.NoDefaultPortForwarding = true
 		cc.ListenPort = 0
-		cc.DataDir = "./tor/"
+		cc.DataDir = fmt.Sprintf("/tmp/tor%d", i)
 		c, err := torrent.NewClient(cc)
 		if err != nil {
 			log.Fatalf("failed %d: %v", i, err)
@@ -167,9 +171,10 @@ func matching_torrent() {
 	db.SetMaxIdleConns(100)
 	db.SetMaxOpenConns(100)
 	db.SetConnMaxLifetime(time.Minute * 5)
-	if _, err = db.Exec("SELECT pg_prewarm('idx_trgm_name');"); err != nil {
+	if _, err = db.Exec("SELECT pg_prewarm('idx_movie_torrents_content_trgm');"); err != nil {
 		log.Printf("%v", err)
 	}
+
 	defer db.Close()
 	tmdbQuery := `SELECT id, title, release_date, popularity FROM "tmdb_movie_dataset_v11" WHERE adult = FALSE ORDER BY vote_count DESC;`
 	movieRows, err := db.Query(tmdbQuery)
@@ -228,9 +233,8 @@ func matching_torrent() {
 						content_name, 
 						infohash,
 						size_bytes,
-
 						(
-							similarity(content_name, $1) + 
+							similarity(title, $1) + 
 							CASE WHEN content_name ~ $2 THEN 0.2 ELSE 0.0 END
 						) AS score
 					FROM movie_torrents

@@ -1,13 +1,13 @@
 package main
 
 import (
-	"lim/routers"
+	"lim/internal/api"
 	"log"
 	"net/http"
 )
 
 func main() {
-	routersInit := routers.InitRouter()
+	routersInit := api.InitRouter()
 	endPoint := ":8080"
 	server := &http.Server{
 		Addr:    endPoint,
