@@ -35,6 +35,7 @@ stuff/
 dist/
 bin/
 tor/
+config.yml
 
 # Editor/IDE
 # .idea/

@@ -1,16 +1,20 @@
 package api
 
 import (
-	"lim/internal/api/v1"
+	"lim/db/repository"
+	v1 "lim/internal/api/v1"
 	"lim/pkg/gintemplrenderer"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
-func InitRouter() *gin.Engine {
+func InitRouter(pool *pgxpool.Pool, rdb *redis.Client) *gin.Engine {
+	repo := repository.New(pool)
 	r := gin.Default()
-	// web
+
 	r.LoadHTMLGlob("/app/template/*")
 	ginHtmlRenderer := r.HTMLRender
 	r.HTMLRender = &gintemplrenderer.HTMLTemplRenderer{FallbackHtmlRenderer: ginHtmlRenderer}
@@ -31,16 +35,15 @@ func InitRouter() *gin.Engine {
 		})
 
 	}
-	//api
+	//API
 	api_v1 := r.Group("/v1")
-	app := &v1.APIHandler{RouterGroup: api_v1}
+	app := &v1.APIHandler{RouterGroup: api_v1, Repository: repo}
 
-	mediaHandler := &v1.MediaHandler{Handler: app}
+	mediaHandler := v1.InitMetaHandler(app)
 	mediaHandler.RegisterRoutes()
 
-	apiv1 := r.Group("/api/v1")
-	{
-		apiv1.GET("/stream-video/*path", v1.GetVideoChunk)
-	}
+	crawlerHandler := v1.InitCrawlerHandler(app, rdb)
+	crawlerHandler.RegisterRoutes()
+
 	return r
 }

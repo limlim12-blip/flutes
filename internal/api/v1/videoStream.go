@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Handler) GetVideoChunk(c *gin.Context) {
+func (h *APIHandler) GetVideoChunk(c *gin.Context) {
 	// filePath := "/app/stuff/output.mp4"
 	filePath := c.Param("path")
 	fullPath := filepath.Join("./stuff", filePath)

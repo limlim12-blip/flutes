@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -10,10 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anacrolix/torrent"
-	"golang.org/x/time/rate"
 	"net/http"
 	_ "net/http/pprof"
+
+	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/metainfo"
+	"github.com/anacrolix/torrent/storage"
+	"golang.org/x/time/rate"
 )
 
 /*
@@ -23,6 +27,13 @@ DELETE FROM torrent_content WHERE infohash IN ( SELECT tc.infohash FROM torrent_
 
 */
 
+type Emptystorage struct {
+}
+
+func (s Emptystorage) OpenTorrent(ctx context.Context, info *metainfo.Info, infoHash metainfo.Hash) (storage.TorrentImpl, error) {
+	var ti storage.TorrentImpl
+	return ti, nil
+}
 func tor() {
 	go func() {
 		// Starts a web server on port 6060 that exposes internal Go metrics
@@ -72,13 +83,7 @@ func tor() {
 	numClients := 40
 	var clients []*torrent.Client
 	for i := 0; i < numClients; i++ {
-		if err := os.RemoveAll(fmt.Sprintf("/tmp/tor%d", i)); err != nil {
-			log.Printf("Error: %v", err)
-		}
-		if err := os.MkdirAll(fmt.Sprintf("/tmp/tor%d", i), 0755); err != nil {
-			log.Printf("Error: %v", err)
-		}
-
+		var s Emptystorage
 		cc := torrent.NewDefaultClientConfig()
 		cc.TotalHalfOpenConns = 1000
 		cc.DialRateLimiter = rate.NewLimiter(1000, 1200)
@@ -88,7 +93,7 @@ func tor() {
 		cc.MinDialTimeout = 2 * time.Second
 		cc.NoDefaultPortForwarding = true
 		cc.ListenPort = 0
-		cc.DataDir = fmt.Sprintf("/tmp/tor%d", i)
+		cc.DefaultStorage = s
 		c, err := torrent.NewClient(cc)
 		if err != nil {
 			log.Fatalf("failed %d: %v", i, err)
@@ -314,3 +319,27 @@ func matching_torrent() {
 	}
 	wg.Wait()
 }
+
+
+
+
+
+
+
+
+
+
+				SELECT *
+				FROM (
+					SELECT 
+						id
+						(
+							similarity(title, $1) + 
+							CASE WHEN  COALESCE(EXTRACT(YEAR FROM release_date)::text, '') ~ $2 THEN 0.2 ELSE 0.0 END
+						) AS score
+					FROM movie_torrents
+					WHERE title % $1
+				) sub
+				WHERE score > 0.5
+				ORDER BY score DESC;
+

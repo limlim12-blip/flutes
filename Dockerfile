@@ -26,6 +26,4 @@ EXPOSE 2345
 EXPOSE 8080
 
 # Run air for live-reload. The -c flag is used to specify the configuration file
-RUN go build -o /scraper ./cmd/data/
-
-CMD ["/scraper"]
+CMD ["air", "-c", "air.toml"]

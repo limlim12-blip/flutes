@@ -1,23 +1,23 @@
 services:
-  # api:
-  #   build:
-  #     context: ./
-  #     dockerfile: Dockerfile
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   ports:
-  #     - "8081:8080"
-  #     - "2345:2345"
-  #   volumes:
-  #     - ./:/app
-  #   networks:
-  #     - internal
-  #   restart: always
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 6G
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+      - "2345:2345"
+    volumes:
+      - ./:/app
+    networks:
+      - internal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 6G
   db:
     image: groonga/pgroonga:latest-alpine-16
     shm_size: 1g
@@ -35,28 +35,27 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+      # - ./database.sql:/docker-entrypoint-initdb.d/database.sql
       - ./stuff/TMDB_movie_dataset_v11.csv:/stuff/TMDB_movie_dataset_v11.csv
       - ./stuff/Torrents.csv:/stuff/Torrents.csv
       - ./stuff/torrent_match.csv:/stuff/torrent_match.csv
-    command:
-      - "postgres"
-      - "-c"
-      - "max_wal_size=4GB"
-      - "-c"
-      - "checkpoint_timeout=15min"
-      - "-c"
-      - "shared_buffers=3GB"
-      - "-c"
-      - "work_mem=64MB"
-      - "-c"
-      - "synchronous_commit=off"
-      - "-c"
-      - "effective_cache_size=6GB"
-      - "-c"
-      - "plan_cache_mode=force_custom_plan"
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 volumes:
   pgdata:
+  redisdata:
 networks:
   internal:
     driver: bridge

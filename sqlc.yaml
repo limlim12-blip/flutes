@@ -1,0 +1,25 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "db/migrations"
+    queries: "db/queries"
+    gen:
+      go:
+        package: "repository"
+        out: "db/repository"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+        emit_exact_table_names: false
+        emit_empty_slices: true
+        overrides:
+          - db_type: "timestampz"
+            go_type:
+              import: "time"
+              type: "Time"
+          - db_type: "text"
+            nullable: true
+            go_type: "string"
+          - db_type: "varchar"
+            nullable: true
+            go_type: "string"
