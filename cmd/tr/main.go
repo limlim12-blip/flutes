@@ -11,9 +11,8 @@ func main() {
 	url := fmt.Sprintf("https://api.themoviedb.org/3/%s/%d?language=%s&page=%d", params.Type, params.ID, query.Language, query.Page)
 
 	if err != nil {
-	    log.Printf("Error: %v", err)
+		log.Printf("Error: %v", err)
 	}
-	;for
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalf("Error creating request: %v", err)

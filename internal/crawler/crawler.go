@@ -6,28 +6,22 @@ import (
 	_ "embed"
 	"fmt"
 	"lim/db/repository"
+	"lim/internal/config"
 	"log"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/anacrolix/torrent"
-	"github.com/anacrolix/torrent/metainfo"
-	"github.com/anacrolix/torrent/storage"
 	"github.com/jackc/pgx/v5/pgtype"
 	PTN "github.com/middelink/go-parse-torrent-name"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/time/rate"
 )
-
-type Emptystorage struct {
-}
-
-func (s Emptystorage) OpenTorrent(ctx context.Context, info *metainfo.Info, infoHash metainfo.Hash) (storage.TorrentImpl, error) {
-	var ti storage.TorrentImpl
-	return ti, nil
-}
 
 // NOTE: handy compile time read file
 //
@@ -35,22 +29,71 @@ func (s Emptystorage) OpenTorrent(ctx context.Context, info *metainfo.Info, info
 var trackerFileContent string
 
 type task struct {
-	Count int
-	Hash  string
+	Count   int
+	torrent repository.GetUnmatchedTorrentsRow
 }
 
+func TorSubHub(ctx context.Context, rdb *redis.Client, repo *repository.Queries) {
+	var mu sync.Mutex
+	var ctxCancel context.CancelFunc
+	pubsub := rdb.Subscribe(ctx, config.ChannelCrawlerControl)
+	defer pubsub.Close()
+	_, err := pubsub.Receive(ctx)
+	if err != nil {
+		log.Fatalf("failed to subscribe: %v", err)
+	}
+	ch := pubsub.Channel()
+	for msg := range ch {
+		switch msg.Payload {
+		case "start":
+			if ctxCancel != nil {
+				log.Println("crawler already running")
+				return
+			}
+			crawlCtx, cancel := context.WithCancel(ctx)
+			ctxCancel = cancel
+			go func() {
+				defer func() {
+					mu.Lock()
+					ctxCancel = nil
+					mu.Unlock()
+				}()
+				log.Println("starting crawler...")
+				tor(crawlCtx, repo)
+				log.Println("crawler finished")
+			}()
+		case "stop":
+			mu.Lock()
+			defer mu.Unlock()
+			if ctxCancel != nil {
+				log.Println("stopping crawler...")
+				ctxCancel()
+				ctxCancel = nil
+			} else {
+				log.Println("0 active crawler to stop")
+			}
+		default:
+			log.Printf("unknown command received: %s", msg.Payload)
+		}
+
+	}
+
+}
+
+var Trackers string
+
 // fake dht crawler
-func tor(repo repository.Queries) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	infoHashes, err := repo.GetUnmatchedTorrents(ctx)
+func tor(ctx context.Context, repo *repository.Queries) {
+	Trackers = getTracker()
+	queryCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	infoHashes, err := repo.GetUnmatchedTorrents(queryCtx)
 	cancel()
 	if err != nil || len(infoHashes) == 0 {
 		log.Printf("No torrents found: %v)", err)
 		return
 	}
-	trackers := getTracker()
 
-	const numClients = 20
+	const numClients = 3
 	clients, cleanupClients, err := initTorrentClients(numClients)
 	if err != nil {
 		log.Printf("Error: %v", err)
@@ -58,42 +101,56 @@ func tor(repo repository.Queries) {
 	}
 	defer cleanupClients()
 
-	insertTasks := make(chan repository.BulkInsertTorrentContentsParams, 100)
-	iWg := insertBulkRoutine(repo, insertTasks)
+	insertTasks := make(chan repository.BulkInsertTorrentContentsParams, 1000)
+	iWg := insertBulkRoutine(ctx, repo, insertTasks)
 
-	gotInfotasks := make(chan task, 1000)
+	gotInfoTasks := make(chan task, 1000)
 	go func() {
+		skip := 3000
 		for i, infoHash := range infoHashes {
-			gotInfotasks <- task{
-				Count: i,
-				Hash:  infoHash,
+			if skip > 0 {
+				skip--
+				continue
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case gotInfoTasks <- task{Count: i, torrent: infoHash}:
 			}
 		}
-		close(gotInfotasks)
+		close(gotInfoTasks)
 	}()
 
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 1000)
-	for t := range gotInfotasks {
-		sem <- struct{}{}
+	taskLimiter := rate.NewLimiter(rate.Limit(40), 60)
+	const numWorkers = 300
+	for w := 0; w < numWorkers; w++ {
 		wg.Add(1)
-		go func(infoHash string, count int) {
+		go func() {
 			defer wg.Done()
-			defer func() { <-sem }()
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("panic: %v", r)
 				}
 			}()
-			client := clients[count%numClients]
-			records, err := processTorrent(client, infoHash, trackers, repo)
-			if err != nil {
-				log.Printf("Error: %v", err)
+			for t := range gotInfoTasks {
+				if ctx.Err() != nil {
+					return
+				}
+				client := clients[t.Count%numClients]
+				records, err := processTorrent(ctx, client, t, taskLimiter, repo)
+				if err != nil {
+					log.Printf("Error: %v", err)
+				}
+				for _, rec := range records {
+					select {
+					case <-ctx.Done():
+						return
+					case insertTasks <- rec:
+					}
+				}
 			}
-			for _, rec := range records {
-				insertTasks <- rec
-			}
-		}(t.Hash, t.Count)
+		}()
 	}
 	wg.Wait()
 	close(insertTasks)
@@ -115,18 +172,31 @@ func getTracker() string {
 
 func initTorrentClients(numClients int) ([]*torrent.Client, func(), error) {
 	clients := make([]*torrent.Client, 0, numClients)
+	basePort := config.GetConfig().TorrentConf.ListenPort
+	data, err := os.ReadFile("/tmp/gluetun/forwarded_port")
+	if err != nil {
+		log.Printf("failed read port %v", err)
+	} else {
+		portStr := strings.TrimSpace(string(data))
+		if p, err := strconv.Atoi(portStr); err == nil && p > 0 {
+			basePort = p
+		}
+	}
+
 	for i := 0; i < numClients; i++ {
-		var s Emptystorage
+		var s EmptyStorage
 		cc := torrent.NewDefaultClientConfig()
-		cc.TotalHalfOpenConns = 1000
-		cc.DialRateLimiter = rate.NewLimiter(1000, 1200)
-		cc.HalfOpenConnsPerTorrent = 20
-		cc.EstablishedConnsPerTorrent = 20
-		cc.NominalDialTimeout = 5 * time.Second
-		cc.MinDialTimeout = 2 * time.Second
-		cc.NoDefaultPortForwarding = true
-		cc.ListenPort = 0
 		cc.DefaultStorage = s
+		cc.TotalHalfOpenConns = 200
+		cc.DialRateLimiter = rate.NewLimiter(400, 600)
+		cc.HalfOpenConnsPerTorrent = 10
+		cc.EstablishedConnsPerTorrent = 10
+		cc.NominalDialTimeout = 15 * time.Second
+		cc.MinDialTimeout = 5 * time.Second
+		cc.NoUpload = true
+		cc.DisableUTP = true
+		cc.DisableTCP = false
+		cc.ListenPort = basePort + i
 		c, err := torrent.NewClient(cc)
 		if err != nil {
 			return nil, nil, err
@@ -138,15 +208,14 @@ func initTorrentClients(numClients int) ([]*torrent.Client, func(), error) {
 			c.Close()
 		}
 	}
-
 	return clients, cleanup, nil
 
 }
 
-func insertBulkRoutine(repo repository.Queries, insertTasks chan repository.BulkInsertTorrentContentsParams) *sync.WaitGroup {
+func insertBulkRoutine(ctx context.Context, repo *repository.Queries, insertTasks chan repository.BulkInsertTorrentContentsParams) *sync.WaitGroup {
 	var insertWg sync.WaitGroup
 	insertWg.Add(1)
-
+	var count int32
 	go func() {
 		defer insertWg.Done()
 		var batch []repository.BulkInsertTorrentContentsParams
@@ -154,19 +223,30 @@ func insertBulkRoutine(repo repository.Queries, insertTasks chan repository.Bulk
 			if len(batch) == 0 {
 				return
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			queryCtx, cancel := context.WithTimeout(ctx, 1*time.Minute)
 			defer cancel()
-			_, err := repo.BulkInsertTorrentContents(ctx, batch)
+			_, err := repo.BulkInsertTorrentContents(queryCtx, batch)
 			if err != nil {
 				log.Printf("Error: %v", err)
 			}
 			batch = batch[:0]
 		}
-
+		ticker := time.NewTicker(3 * time.Minute)
+		maxBatchSize := 300
+		defer ticker.Stop()
 		for task := range insertTasks {
-			batch = append(batch, task)
-			if len(batch) >= 300 {
+			select {
+			case <-ctx.Done():
+				break
+			case <-ticker.C:
 				flush()
+			default:
+				atomic.AddInt32(&count, 1)
+				log.Printf("added %d", atomic.LoadInt32(&count))
+				batch = append(batch, task)
+				if len(batch) >= maxBatchSize {
+					flush()
+				}
 			}
 		}
 		flush()
@@ -174,9 +254,16 @@ func insertBulkRoutine(repo repository.Queries, insertTasks chan repository.Bulk
 	return &insertWg
 }
 
-func processTorrent(client *torrent.Client, infoHash string, trackers string, repo repository.Queries) ([]repository.BulkInsertTorrentContentsParams, error) {
-	magnetLink := fmt.Sprintf("magnet:?xt=urn:btih:%s%s", infoHash, trackers)
+func processTorrent(ctx context.Context, client *torrent.Client, task task, taskLimiter *rate.Limiter, repo *repository.Queries) ([]repository.BulkInsertTorrentContentsParams, error) {
+	if isBlocked(task.torrent.Name) {
+		log.Printf("- blocked %d", task.Count)
+		return nil, nil
+	}
+	magnetLink := fmt.Sprintf("magnet:?xt=urn:btih:%s%s", task.torrent.Infohash, Trackers)
+	log.Printf("- passed %d", task.Count)
+	taskLimiter.Wait(ctx)
 	t, err := client.AddMagnet(magnetLink)
+
 	if err != nil {
 		log.Printf("%v", err)
 		return nil, err
@@ -184,12 +271,20 @@ func processTorrent(client *torrent.Client, infoHash string, trackers string, re
 	defer t.Drop()
 	select {
 	case <-t.GotInfo():
-		fmt.Println("found!")
+		log.Printf("found!: %s - %s \n", t.InfoHash(), t.Name())
+		break
 	case <-time.After(300 * time.Second):
-		log.Println("timeout")
+		log.Printf("timeout %d", task.Count)
 		return nil, nil
 	}
 	info := t.Info()
+	for _, file := range info.UpvertedFiles() {
+		path := file.DisplayPath(info)
+		if hasBannedExtension(path) {
+			return nil, nil
+		}
+	}
+
 	var records []repository.BulkInsertTorrentContentsParams
 	for _, file := range info.UpvertedFiles() {
 		path := file.DisplayPath(info)
@@ -197,8 +292,8 @@ func processTorrent(client *torrent.Client, infoHash string, trackers string, re
 		if err != nil {
 			continue
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		movieID, err := repo.SearchMoviesByTitleAndYear(ctx, repository.SearchMoviesByTitleAndYearParams{
+		queryCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+		movieID, err := repo.SearchMoviesByTitleAndYear(queryCtx, repository.SearchMoviesByTitleAndYearParams{
 			Title:       parsedName.Title,
 			ReleaseYear: strconv.Itoa(parsedName.Year),
 		})
@@ -211,11 +306,12 @@ func processTorrent(client *torrent.Client, infoHash string, trackers string, re
 			}
 		}
 		records = append(records, repository.BulkInsertTorrentContentsParams{
-			Infohash:    infoHash,
-			TorrentName: strings.ToValidUTF8(info.Name, ""),
-			ContentName: strings.ToValidUTF8(path, ""),
-			SizeBytes:   file.Length,
-			MatchID:     matchID,
+			Infohash:          task.torrent.Infohash,
+			TorrentName:       info.Name,
+			ContentName:       path,
+			SizeBytes:         file.Length,
+			MatchID:           matchID,
+			ParsedContentName: parsedName.Title,
 		})
 	}
 	return records, nil

@@ -2,13 +2,39 @@ root = "."
 tmp_dir = ".tmp"
 
 [build]
-cmd = "go build -o ./.tmp/main ./cmd/lim"
+cmd = "go run github.com/a-h/templ/cmd/templ@latest generate && go build  -o ./.tmp/main ./cmd/lim"
 entrypoint = "./.tmp/main"
-full_bin = "./.tmp/main"
+
+full_bin = "dlv exec ./.tmp/main --listen=0.0.0.0:2345 --headless=true --api-version=2 --accept-multiclient --continue --log --"
 
 include_dir = ["cmd", "pkg", "internal", "template"]
 include_ext = ["go", "tpl", "tmpl", "html", "txt"]
 exclude_dir = ["assets", "tmp", "dist", ".tmp"]
+exclude_unchanged = false
+follow_symlink = false
+log = "build-errors-air.log"
+poll = false
+poll_interval = 500
+delay = 1000
+stop_on_error = true
+send_interrupt = false
+kill_delay = 500
+rerun = false
+rerun_delay = 500
 
 [log]
-time = true
+time = false
+main_only = false
+
+[color]
+main = "magenta"
+watcher = "green"
+build = "yellow"
+runner = "green"
+
+[misc]
+clean_on_exit = true
+
+[screen]
+clear_on_rebuild = true
+keep_scroll = true

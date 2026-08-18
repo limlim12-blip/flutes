@@ -48,10 +48,11 @@ type Torrent struct {
 }
 
 type TorrentContent struct {
-	ID          pgtype.Int4 `json:"id"`
-	Infohash    string      `json:"infohash"`
-	TorrentName string      `json:"torrent_name"`
-	ContentName string      `json:"content_name"`
-	SizeBytes   int64       `json:"size_bytes"`
-	MatchID     pgtype.Int4 `json:"match_id"`
+	ID                pgtype.Int4 `json:"id"`
+	Infohash          string      `json:"infohash"`
+	TorrentName       string      `json:"torrent_name"`
+	ContentName       string      `json:"content_name"`
+	ParsedContentName string      `json:"parsed_content_name"`
+	SizeBytes         int64       `json:"size_bytes"`
+	MatchID           pgtype.Int4 `json:"match_id"`
 }

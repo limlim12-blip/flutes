@@ -1,18 +1,54 @@
 services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    volumes:
+      - gluetun-data:/tmp/gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - SERVER_COUNTRIES=Singapore,Hong Kong,Taiwan,Japan
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+      - WIREGUARD_MTU=1280
+      - WIREGUARD_ADDRESSES=10.2.0.2/32
+      - BLOCK_MALICIOUS=off
+      - VERSION_INFORMATION=off
+      - HEALTH_TARGET_ADDRESSES=cloudflare.com,google.com
+    ports:
+      - "8080:8080/tcp"
+      - "2345:2345/tcp"
+      - "39810:39810/tcp"
+      - "39810:39810/udp"
+    networks:
+      - internal
+    restart: always
+
   api:
     build:
       context: ./
       dockerfile: Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8081:8080"
-      - "2345:2345"
+    tty: true
+    environment:
+      - TERM=xterm-256color
+    env_file:
+      - .env
     volumes:
       - ./:/app
-    networks:
-      - internal
+      - gluetun-data:/tmp/gluetun:ro
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: always
     deploy:
       resources:
@@ -35,10 +71,10 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # - ./database.sql:/docker-entrypoint-initdb.d/database.sql
       - ./stuff/TMDB_movie_dataset_v11.csv:/stuff/TMDB_movie_dataset_v11.csv
       - ./stuff/Torrents.csv:/stuff/Torrents.csv
       - ./stuff/torrent_match.csv:/stuff/torrent_match.csv
+
   redis:
     image: redis:7-alpine
     restart: always
@@ -53,9 +89,11 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
 volumes:
   pgdata:
   redisdata:
+  gluetun-data:
 networks:
   internal:
     driver: bridge

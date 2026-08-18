@@ -2,8 +2,11 @@ package gintemplrenderer
 
 import (
 	"context"
-	"github.com/gin-gonic/gin/render"
+	"lim/template"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/render"
 
 	"github.com/a-h/templ"
 )
@@ -34,6 +37,10 @@ func New(ctx context.Context, status int, component templ.Component) *Renderer {
 		Status:    status,
 		Component: component,
 	}
+}
+func Render(c *gin.Context, status int, component templ.Component) {
+	r := New(c.Request.Context(), http.StatusOK, template.Show())
+	c.Render(http.StatusOK, r)
 }
 
 type Renderer struct {

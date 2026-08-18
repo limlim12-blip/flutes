@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type APIHandler struct {
+type APIRouter struct {
 	RouterGroup gin.IRouter
 	Repository  *repository.Queries
 }

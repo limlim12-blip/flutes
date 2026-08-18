@@ -12,30 +12,36 @@ import (
 )
 
 type BulkInsertTorrentContentsParams struct {
-	Infohash    string      `json:"infohash"`
-	TorrentName string      `json:"torrent_name"`
-	ContentName string      `json:"content_name"`
-	SizeBytes   int64       `json:"size_bytes"`
-	MatchID     pgtype.Int4 `json:"match_id"`
+	Infohash          string      `json:"infohash"`
+	TorrentName       string      `json:"torrent_name"`
+	ContentName       string      `json:"content_name"`
+	ParsedContentName string      `json:"parsed_content_name"`
+	SizeBytes         int64       `json:"size_bytes"`
+	MatchID           pgtype.Int4 `json:"match_id"`
 }
 
 const getUnmatchedTorrents = `-- name: GetUnmatchedTorrents :many
-SELECT t.infohash FROM torrents t WHERE NOT EXISTS ( SELECT 1 FROM torrent_contents tc WHERE tc.infohash = t.infohash) ORDER BY t.seeders DESC
+SELECT t.infohash, t.name FROM torrents t WHERE NOT EXISTS ( SELECT 1 FROM torrent_contents tc WHERE tc.infohash = t.infohash) ORDER BY t.seeders DESC
 `
 
-func (q *Queries) GetUnmatchedTorrents(ctx context.Context) ([]string, error) {
+type GetUnmatchedTorrentsRow struct {
+	Infohash string `json:"infohash"`
+	Name     string `json:"name"`
+}
+
+func (q *Queries) GetUnmatchedTorrents(ctx context.Context) ([]GetUnmatchedTorrentsRow, error) {
 	rows, err := q.db.Query(ctx, getUnmatchedTorrents)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []string{}
+	items := []GetUnmatchedTorrentsRow{}
 	for rows.Next() {
-		var infohash string
-		if err := rows.Scan(&infohash); err != nil {
+		var i GetUnmatchedTorrentsRow
+		if err := rows.Scan(&i.Infohash, &i.Name); err != nil {
 			return nil, err
 		}
-		items = append(items, infohash)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -44,7 +50,7 @@ func (q *Queries) GetUnmatchedTorrents(ctx context.Context) ([]string, error) {
 }
 
 const insertTorrentContent = `-- name: InsertTorrentContent :one
-INSERT INTO torrent_contents (infohash, torrent_name, content_name, size_bytes, match_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING RETURNING id, infohash, torrent_name, content_name, size_bytes, match_id
+INSERT INTO torrent_contents (infohash, torrent_name, content_name, size_bytes, match_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING RETURNING id, infohash, torrent_name, content_name, parsed_content_name, size_bytes, match_id
 `
 
 type InsertTorrentContentParams struct {
@@ -69,6 +75,7 @@ func (q *Queries) InsertTorrentContent(ctx context.Context, arg InsertTorrentCon
 		&i.Infohash,
 		&i.TorrentName,
 		&i.ContentName,
+		&i.ParsedContentName,
 		&i.SizeBytes,
 		&i.MatchID,
 	)
@@ -83,7 +90,9 @@ FROM (
         popularity,
         (
             similarity(title, $1) + 
-            CASE WHEN $2::text != '' AND release_date LIKE $2::text || '%' THEN 0.2 ELSE 0.0 END
+            CASE WHEN $2::text != '' 
+                AND STARTS_WITH(release_date, $2::text) THEN 0.2 ELSE 0.0 
+            END
         ) AS score
     FROM tmdb_movie_dataset_v11
     WHERE title % $1

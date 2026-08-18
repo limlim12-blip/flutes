@@ -10,7 +10,7 @@ import (
 
 type Querier interface {
 	BulkInsertTorrentContents(ctx context.Context, arg []BulkInsertTorrentContentsParams) (int64, error)
-	GetUnmatchedTorrents(ctx context.Context) ([]string, error)
+	GetUnmatchedTorrents(ctx context.Context) ([]GetUnmatchedTorrentsRow, error)
 	InsertTorrentContent(ctx context.Context, arg InsertTorrentContentParams) (TorrentContent, error)
 	SearchMoviesByTitleAndYear(ctx context.Context, arg SearchMoviesByTitleAndYearParams) (int32, error)
 }

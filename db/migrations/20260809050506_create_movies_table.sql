@@ -114,8 +114,9 @@ DROP TABLE temps_torrents;
 CREATE TABLE IF NOT EXISTS torrent_contents (
     id int GENERATED ALWAYS AS IDENTITY,
     infohash varchar(40) NOT NULL REFERENCES torrents (infohash) ON DELETE CASCADE,
-    torrent_name text,
+    torrent_name text NOT NULL,
     content_name text NOT NULL,
+    parsed_content_name text NULL,
     size_bytes bigint NOT NULL,
     match_id int
 );
@@ -134,7 +135,8 @@ CREATE INDEX IF NOT EXISTS idx_tmdb_title_pgroonga ON tmdb_movie_dataset_v11 USI
 
 CREATE INDEX IF NOT EXISTS idx_tmdb_title_trgm ON tmdb_movie_dataset_v11 USING gin (title gin_trgm_ops);
 
-CREATE INDEX IF NOT EXISTS idx_torrents_name_trgm ON torrents USING pgroonga (name);
+-- +goose StatementEnd
+
 
 -- +goose Down
 -- +goose StatementBegin

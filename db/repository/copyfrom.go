@@ -32,6 +32,7 @@ func (r iteratorForBulkInsertTorrentContents) Values() ([]interface{}, error) {
 		r.rows[0].Infohash,
 		r.rows[0].TorrentName,
 		r.rows[0].ContentName,
+		r.rows[0].ParsedContentName,
 		r.rows[0].SizeBytes,
 		r.rows[0].MatchID,
 	}, nil
@@ -42,5 +43,5 @@ func (r iteratorForBulkInsertTorrentContents) Err() error {
 }
 
 func (q *Queries) BulkInsertTorrentContents(ctx context.Context, arg []BulkInsertTorrentContentsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"torrent_contents"}, []string{"infohash", "torrent_name", "content_name", "size_bytes", "match_id"}, &iteratorForBulkInsertTorrentContents{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"torrent_contents"}, []string{"infohash", "torrent_name", "content_name", "parsed_content_name", "size_bytes", "match_id"}, &iteratorForBulkInsertTorrentContents{rows: arg})
 }

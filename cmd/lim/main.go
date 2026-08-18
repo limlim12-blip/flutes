@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"lim/db"
-	"lim/internal/api"
+	"lim/db/repository"
+	"lim/internal/app"
 	"lim/internal/config"
+	. "lim/internal/crawler"
 	"log"
 	"net/http"
 
@@ -14,7 +16,8 @@ import (
 )
 
 func main() {
-	if err := config.Load("config.yml"); err != nil {
+	log.Printf("starto")
+	if err := config.Load("./config.yml"); err != nil {
 		log.Fatalf("Configuration error: %v", err)
 	}
 	Cfg := config.GetConfig()
@@ -35,12 +38,14 @@ func main() {
 		log.Fatalf("Migration failed: %v", err)
 	}
 	rdb := redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%d", Cfg.Redis.Host, Cfg.Redis.Port)})
+	repo := repository.New(pool)
 
-	routersInit := api.InitRouter(pool, rdb)
+	routersInit := app.InitRouter(repo, rdb)
 	server := &http.Server{
-		Addr:    fmt.Sprintf("%d", Cfg.HTTP.Port),
+		Addr:    fmt.Sprintf(":%d", Cfg.HTTP.Port),
 		Handler: routersInit,
 	}
+	go TorSubHub(ctx, rdb, repo)
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("%v", err)
