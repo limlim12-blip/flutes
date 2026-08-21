@@ -5,6 +5,7 @@ go 1.26.4
 require (
 	github.com/EDDYCJY/go-gin-example v0.0.0-20260313025002-4f5174ca325b
 	github.com/anacrolix/torrent v1.61.0
+	github.com/angelofallars/htmx-go v0.5.0
 	github.com/astaxie/beego v1.12.3
 	github.com/gin-gonic/gin v1.12.0
 	github.com/jackc/pgx/v5 v5.10.0

@@ -2,7 +2,9 @@ package app
 
 import (
 	"lim/db/repository"
-	v1 "lim/internal/app/api/v1"
+	"lim/internal/app/v1"
+	api_v1 "lim/internal/app/v1/api"
+	render_v1 "lim/internal/app/v1/render"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -12,20 +14,19 @@ func InitRouter(repo *repository.Queries, rdb *redis.Client) *gin.Engine {
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
 
+	r.Static("/static", "./static")
 	//render
-	web := r.Group("/render/v1")
-	{
-		web.GET("/media/")
-	}
+	web := v1.Handler{Engine: r}
+	mediaHandler := render_v1.InitMetaHandler(web)
+	mediaHandler.RegisterRoutes("/")
+
 	//API
-	api_v1 := r.Group("api/v1")
-	app := &v1.APIRouter{RouterGroup: api_v1, Repository: repo}
+	app := &v1.APIRouter{Engine: r, Repository: repo}
+	mediaRouter := api_v1.InitMetaRouter(app)
+	mediaRouter.RegisterRoutes("api/v1/meta")
 
-	mediaHandler := v1.InitMetaHandler(app)
-	mediaHandler.RegisterRoutes()
-
-	crawlerHandler := v1.InitCrawlerHandler(app, rdb)
-	crawlerHandler.RegisterRoutes()
+	crawlerRouter := api_v1.InitCrawlerRouter(app, rdb)
+	crawlerRouter.RegisterRoutes("api/v1/crawler")
 
 	return r
 }

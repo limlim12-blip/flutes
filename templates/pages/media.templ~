@@ -1,0 +1,256 @@
+// gofmt:disable
+package pages
+
+import (
+	"fmt"
+	. "lim/internal/models"
+)
+
+templ MetaTags(keywords, description string) {
+	<meta name="keywords" content={ keywords }/>
+	<meta name="description" content={ description }/>
+}
+
+templ MediaHome(daily_data []MediaItem, tv_data []MediaItem, movie_data []MediaItem) {
+	<div class="w-full">
+		@gridHeader("HOME WELDUM")
+		<div class="flex flex-col items-center">
+			<h1>hot</h1>
+			@mediaGrid(daily_data[:4])
+		</div>
+		<div class="flex flex-col items-center">
+			<h1>tv</h1>
+			@mediaGrid(tv_data[:12])
+		</div>
+		<div class="flex flex-col items-center">
+			<h1>movie</h1>
+			@mediaGrid(movie_data[:12])
+		</div>
+	</div>
+}
+
+templ MediaDetail(data TMDBTvSeries) {
+	<div class="w-full flex items-start mx-0 mb-10 px-10 gap-8 p-6 text-base-300">
+		<div class="w-50 shrink-0 shadow-2xl rounded-md overflow-hidden">
+			<img
+				class="w-full aspect-2/3 object-cover"
+				src={ getPosterURL(data.PosterPath) }
+				alt={ data.Name }
+				loading="lazy"
+			/>
+			<div class="bg-[#2a2929] text-amber-50 text-center text-xs font-medium py-3 border-t border-[#1c1c1c]">
+				On Deck — S1 · E1
+			</div>
+		</div>
+		<div class="max-w-250">
+			<h1 class="text-white text-3xl md:text-5xl font-extrabold tracking-tight mb-3">
+				{ data.Name }
+				if len(data.FirstAirDate) >= 4 {
+					<span class="font-light text-3xl text-gray-400">
+						{ fmt.Sprintf("(%s)", data.FirstAirDate[:4]) }
+					</span>
+				}
+			</h1>
+			<span class="text-amber-700 transition-all duration-300 text-[0px]">
+				{{ limit := min(4, len(data.Genres)) }}
+				for i, genre := range data.Genres[:limit] {
+					if i > 0 {
+						if i == limit - 1 && limit > 2 {
+							<span class="text-sm no-underline">, and </span>
+						} else {
+							<span class="text-sm no-underline">, </span>
+						}
+					}
+					<span class="text-sm underline cursor-pointer hover:text-amber-500">
+						{ genre.Name }
+					</span>
+				}
+			</span>
+			<span class="text-amber-700 transition-all duration-300 text-[0px]">
+				{{ l := min(4, len(data.CreatedBy)) }}
+				for i, genre := range data.Genres[:l] {
+					if i > 0 {
+						if i == limit - 1 && limit > 2 {
+							<span class="text-sm no-underline">, and </span>
+						} else {
+							<span class="text-sm no-underline">, </span>
+						}
+					}
+					<span class="text-sm underline cursor-pointer hover:text-amber-500">
+						{ genre.Name }
+					</span>
+				}
+			</span>
+			<p
+				class="text-amber-50 line-clamp-3 transition-all duration-300 max-w-150"
+				_="on load if my scrollHeight <= my clientHeight add .hidden to next <button/>"
+			>
+				{ data.Overview }
+			</p>
+			<button
+				_="on click 
+           toggle .line-clamp-3 on the previous <p/> 
+           then toggle .rotate-180 on the <svg/> in me"
+				class="bg-transparent text-amber-400 hover:underline mt-1 text-sm font-medium flex items-center gap-1 cursor-pointer border-none p-0"
+			>
+				More 
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mt-0.5 transition-transform duration-300">
+					<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"></path>
+				</svg>
+			</button>
+		</div>
+		<div>
+			<h1>SEASON</h1>
+			<h1>CAST & CREW</h1>
+		</div>
+	</div>
+}
+
+templ MediaTrending(data TMDBResponse) {
+	<div class="w-full">
+		@gridHeader("Trending Catalog")
+		@pagination(data.Page, data.TotalPages)
+		@mediaGrid(data.Results)
+		@pagination(data.Page, data.TotalPages)
+	</div>
+}
+
+templ MediaSearch(data TMDBResponse, query string) {
+	<div class="min-h-screen">
+		@gridHeader(fmt.Sprintf("Search results for: %s", query))
+		@pagination(data.Page, data.TotalPages)
+		@mediaGrid(data.Results)
+		@pagination(data.Page, data.TotalPages)
+	</div>
+}
+
+func getDisplayName(item MediaItem) string {
+	if item.Title != "" {
+		return item.Title
+	}
+	if item.Name != "" {
+		return item.Name
+	}
+	return "Unknown Title"
+}
+
+func getDisplayDate(item MediaItem) string {
+	date := item.ReleaseDate
+	if date == "" {
+		date = item.FirstAirDate
+	}
+	if len(date) >= 4 {
+		return date[:4] // Display year (e.g. 2026)
+	}
+	return "N/A"
+}
+
+func getPosterURL(path string) string {
+	if path == "" {
+		return ""
+	}
+	return "https://image.tmdb.org/t/p/w500" + path
+}
+
+templ gridHeader(text string) {
+	<div class="text-center py-6">
+		<div class="text-3xl font-extrabold text-base-content tracking-tight">
+			<div class="flex-1">
+				<h1 class="text-2xl text-black flex items-center justify-center gap-2">
+					<span>
+						<b>{ text }</b>
+					</span>
+				</h1>
+			</div>
+		</div>
+		<div class="mb-4"></div>
+	</div>
+}
+
+templ pagination(Page, TotalPages uint) {
+	<div class="flex justify-center items-center w-full overflow-x-auto mb-2">
+		<table class="table mx-auto">
+			<tbody>
+				<tr>
+					<td class="flex items-center justify-center gap-2 p-0 w-full">
+						if Page > 1 {
+							<a class="ml-4 px-3 py-1 text-base-content hover:underline font-medium">Next </a>
+						}
+						for i := max(1,Page-3); i <= min(max(7,Page+3),TotalPages); i++ {
+							if i == Page {
+								<span class="px-2 py-1 font-semibold text-primary">
+									<b>{ fmt.Sprintf("%d", i) }</b>
+								</span>
+							} else {
+								<a
+									class="px-2 py-1 text-base-content/70 hover:text-base-content hover:underline"
+								>
+									{ fmt.Sprintf("%d", i) }
+								</a>
+							}
+						}
+						if Page < TotalPages {
+							<a class="ml-4 px-3 py-1 text-base-content hover:underline font-medium">Next </a>
+						}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+}
+
+templ mediaGrid(data []MediaItem) {
+	<div id="media-grid" class="px-4 sm:px-6 lg:px-8 pb-5">
+		<div
+			class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-6"
+			_="on load from window for card in <.media-card/> wait 40ms then remove .opacity-0 from card end"
+		>
+			for _, item := range data {
+				@mediaCard(item)
+			}
+		</div>
+	</div>
+}
+
+templ mediaCard(item MediaItem) {
+	<div
+		id={ item.ID }
+		class="media-card opacity-0 card bg-base-100  transition-all duration-500 ease-out hover:-translate-y-1.5 cursor-pointer group rounded-none"
+		hx-get={ fmt.Sprintf("/media/%s/%d", item.MediaType, item.ID) }
+		hx-target="#modal-container"
+		hx-swap="innerHTML"
+		_="on click add .scale-95 to me then add .loading to <.htmx-indicator/> in me until htmx:afterSwap remove .scale-95 from me"
+	>
+		<!-- Poster Figure -->
+		<figure class="b-0 overflow-hidden relative rounded-none">
+			if item.PosterPath != "" {
+				<img
+					src={ getPosterURL(item.PosterPath) }
+					alt={ getDisplayName(item) }
+					loading="lazy"
+				/>
+			} else {
+				<div class="absolute flex items-center justify-center">
+					<span>🎬</span>
+					<span>No Poster</span>
+				</div>
+			}
+			<div class="absolute flex items-center justify-center bg-base-100/50 backdrop-blur-sm opacity-0 transition-opacity duration-200 group-[.scale-95]:opacity-100">
+				<span class="htmx-indicator loading loading-spinner loading-lg text-primary"></span>
+			</div>
+		</figure>
+		<div class="p-2.5 flex flex-col justify-end gap-0.5 relative z-10 -mt-10 bg-linear-to-t from-base-100 via-base-100 to-transparent pt-8">
+			<h3 class="card-title text-xs leading-tight line-clamp-1 text-base-content transition-colors" title={ getDisplayName(item) }>
+				{ getDisplayName(item) }
+			</h3>
+			<div class="flex items-center justify-between text-xs text-base-content/60">
+				<span class="font-medium">{ getDisplayDate(item) }</span>
+				if item.MediaType != "" {
+					<div class="badge badge-sm bg-blue-950 uppercase font-bold text-[9px] text-amber-100">
+						{ item.MediaType }
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+}

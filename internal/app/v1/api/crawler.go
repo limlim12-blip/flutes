@@ -1,7 +1,8 @@
-package v1
+package api
 
 import (
 	"context"
+	. "lim/internal/app/v1"
 	"lim/internal/config"
 	"net/http"
 	"time"
@@ -15,14 +16,14 @@ type CrawlerRouter struct {
 	rdb *redis.Client
 }
 
-func InitCrawlerHandler(app *APIRouter, rdb *redis.Client) CrawlerRouter {
+func InitCrawlerRouter(app *APIRouter, rdb *redis.Client) CrawlerRouter {
 	var u = CrawlerRouter{rdb: rdb}
 	u.APIRouter = app
 	return u
 }
 
-func (h *CrawlerRouter) RegisterRoutes() {
-	crawlerGroup := h.RouterGroup.Group("/crawler")
+func (h *CrawlerRouter) RegisterRoutes(group string) {
+	crawlerGroup := h.Engine.Group(group)
 	{
 		crawlerGroup.POST("/start", h.handleCrawlerSignal("start", config.ChannelCrawlerControl))
 		crawlerGroup.POST("/stop", h.handleCrawlerSignal("stop", config.ChannelCrawlerControl))

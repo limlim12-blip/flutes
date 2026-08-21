@@ -1,7 +1,8 @@
-package v1
+package api
 
 import (
 	"github.com/gin-gonic/gin"
+	. "lim/internal/app/v1"
 )
 
 type IndexerRouter struct {
@@ -9,7 +10,7 @@ type IndexerRouter struct {
 }
 
 func (h *IndexerRouter) RegisterRoutes() {
-	courses := h.RouterGroup.Group("/meta")
+	courses := h.Engine.Group("/meta")
 	courses.GET("/indexer/search/:imdb_id", h.IndexerSearch)
 	courses.GET("/indexer/stats", h.IndexerStats)
 }

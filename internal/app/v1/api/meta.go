@@ -1,23 +1,25 @@
-package v1
+package api
 
 import (
 	"fmt"
+	. "lim/internal/app/v1"
 	. "lim/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	. "lim/internal/models"
 )
 
 type MetaRouter struct {
 	*APIRouter
 }
 
-func InitMetaHandler(app *APIRouter) MetaRouter {
+func InitMetaRouter(app *APIRouter) MetaRouter {
 	return MetaRouter{app}
 }
 
-func (h *MetaRouter) RegisterRoutes() {
-	courses := h.APIRouter.RouterGroup.Group("/meta")
+func (h *MetaRouter) RegisterRoutes(group string) {
+	courses := h.APIRouter.Engine.Group(group)
 	courses.GET("/discover/:type", h.GetMediaTrending)
 	courses.GET("/search/:type", h.GetMediaSearch)
 	courses.GET("/title/:type/:id", h.GetMetaDetail)

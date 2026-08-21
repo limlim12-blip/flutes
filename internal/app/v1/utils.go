@@ -4,12 +4,18 @@ import (
 	"lim/db/repository"
 	"net/http"
 
+	"github.com/a-h/templ"
+	"github.com/angelofallars/htmx-go"
 	"github.com/gin-gonic/gin"
 )
 
 type APIRouter struct {
-	RouterGroup gin.IRouter
-	Repository  *repository.Queries
+	Engine     *gin.Engine
+	Repository *repository.Queries
+}
+
+type Handler struct {
+	Engine *gin.Engine
 }
 
 func BindAndValidateParams(c *gin.Context, uriObj any, queryObj any, headerObj any) bool {
@@ -32,4 +38,11 @@ func BindAndValidateParams(c *gin.Context, uriObj any, queryObj any, headerObj a
 		}
 	}
 	return true
+}
+func HtmxRender(c *gin.Context, template templ.Component) {
+	if err := htmx.NewResponse().RenderTempl(c.Request.Context(), c.Writer, template); err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 }

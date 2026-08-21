@@ -5,11 +5,14 @@ FROM golang:1.26.4-alpine
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Install delve, used to debug the application (golang doesn't have a built-in debugger)
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
+RUN apk add --no-cache bash curl unzip nodejs npm libstdc++ gcompat
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 
 # Install air, used to hot reload the application
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/go-delve/delve/cmd/dlv@latest && \
+    go install github.com/air-verse/air@latest && \
+    go install github.com/a-h/templ/cmd/templ@latest
 
 # Copy go mod and sum files and install dependencies
 COPY go.mod go.sum ./

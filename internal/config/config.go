@@ -36,7 +36,7 @@ type DBConfig struct {
 	// PoolSize int    `yaml:"pool_size" env:"DB_POOL_SIZE" env-default:"10"`
 }
 type APIkey struct {
-	TmDB string
+	TmDB string `yaml:"tmdb" env:"TMDB_API_KEY" env-required:"true"`
 }
 
 type TorrentConf struct {

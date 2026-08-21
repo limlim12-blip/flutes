@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@source "../**/*.templ";
+@source "../**/*.go";
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+@plugin 'daisyui';
+

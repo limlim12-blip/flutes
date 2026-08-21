@@ -32,10 +32,13 @@ go.work.sum
 .env
 stuff/
 .tmp/
+tmp/
 dist/
 bin/
 tor/
+.parcel-cache
 config.yml
+node_modules
 
 # Editor/IDE
 # .idea/

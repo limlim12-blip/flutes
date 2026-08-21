@@ -6,3 +6,9 @@ README.md
 vendor/
 **/*.md
 **/*_test.go
+node_modules
+stuff/
+/tmp
+/bin
+/dist
+/build
