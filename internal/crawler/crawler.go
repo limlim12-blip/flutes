@@ -184,9 +184,7 @@ func initTorrentClients(numClients int) ([]*torrent.Client, func(), error) {
 	}
 
 	for i := 0; i < numClients; i++ {
-		var s EmptyStorage
 		cc := torrent.NewDefaultClientConfig()
-		cc.DefaultStorage = s
 		cc.TotalHalfOpenConns = 200
 		cc.DialRateLimiter = rate.NewLimiter(400, 600)
 		cc.HalfOpenConnsPerTorrent = 10

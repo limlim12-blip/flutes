@@ -40,7 +40,8 @@ type APIkey struct {
 }
 
 type TorrentConf struct {
-	ListenPort int `yaml:"listen_port" env-default:"0"`
+	ListenPort int   `yaml:"listen_port" env-default:"0"`
+	MaxMem     int64 `yaml:"max_memory" env-default:"0"`
 	// add more
 }
 

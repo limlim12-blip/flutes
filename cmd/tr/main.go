@@ -1,37 +1,70 @@
 package main
 
 import (
-	"fmt"
-	"io"
+	. "lim/internal/crawler"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
+	"time"
+
+	"github.com/anacrolix/torrent"
+	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	url := fmt.Sprintf("https://api.themoviedb.org/3/%s/%d?language=%s&page=%d", params.Type, params.ID, query.Language, query.Page)
+func StreamTorrent(magnetLink string, TorrentClient *torrent.Client) *torrent.File {
+	decodedMagnet, err := url.QueryUnescape(magnetLink)
+	if err != nil {
+		decodedMagnet = magnetLink
+	}
 
+	t, err := TorrentClient.AddMagnet(decodedMagnet)
+	if err != nil {
+		return nil
+	}
+	<-t.GotInfo()
+	var targetFile *torrent.File
+	for _, file := range t.Files() {
+		// Find your target media file (e.g., .mp4 or .mkv)
+		targetFile = file
+		break
+	}
+
+	if targetFile == nil {
+		return nil
+	}
+	return targetFile
+}
+func main() {
+	cc := torrent.NewDefaultClientConfig()
+	cacheDir := "./tor"
+	os.MkdirAll(cacheDir, 0755)
+
+	cc.DefaultStorage = &EmptyStorage{BaseDir: cacheDir, List: new(SafeList).Init(), MaxMem: 2 * 1024 * 1024 * 1024}
+	c, err := torrent.NewClient(cc)
 	if err != nil {
 		log.Printf("Error: %v", err)
 	}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
-	}
 
-	req.Header.Add("accept", "application/json")
-	req.Header.Add("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmNTk2ZGI3NGI1MDAwNmVhZjRiZmJkNWQ3YzFkOWExZiIsIm5iZiI6MTc4NDQ2Mzc4NC4yOTQwMDAxLCJzdWIiOiI2YTVjYzFhODkwYjljM2VmZjZkNzQzZWEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.j6_ZuLcIY4VLDfzVPPJBFXZ8W40W5VBbRl2bw2LjnQ0")
+	file := StreamTorrent("magnet:?xt=urn:btih:abf093fed9cc32bb036d38b23ebd2e1b017b6caf&dn=Japanese%20Drama%20Collection%200-G&xl=330037734578&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce", c)
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		// Exit early so 'res' is not nil when we try to use it
-		log.Fatalf("Error making request: %v", err)
-	}
-	defer res.Body.Close()
+	r := gin.Default()
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Fatalf("Error reading response body: %v", err)
-	}
+	r.LoadHTMLGlob("template/*")
 
-	fmt.Println(string(body))
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "video.html", gin.H{
+			"VideoUrl": "/stream-video",
+		})
+	})
+
+	r.GET("/stream-video", func(c *gin.Context) {
+		log.Printf("%v", file.DisplayPath())
+		reader := file.NewReader()
+		defer reader.Close()
+		reader.SetResponsive()
+		http.ServeContent(c.Writer, c.Request, file.DisplayPath(), time.Now(), reader)
+	})
+
+	r.Run(":8080")
 }
