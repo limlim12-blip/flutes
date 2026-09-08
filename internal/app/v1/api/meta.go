@@ -1,13 +1,8 @@
 package api
 
 import (
-	"fmt"
-	. "lim/internal/app/v1"
-	. "lim/internal/service"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-	. "lim/internal/models"
+	. "lim/internal/app/v1"
 )
 
 type MetaRouter struct {
@@ -28,45 +23,49 @@ func (h *MetaRouter) RegisterRoutes(group string) {
 
 func (h *MetaRouter) GetMetaSeason(c *gin.Context) {
 }
-
 func (h *MetaRouter) GetMediaTrending(c *gin.Context) {
-	var query TmdbQuery
-	var uri MediaTrendingUriParams
-	if !BindAndValidateParams(c, uri, &query, nil) {
-		return
-	}
-	data, err := FetchMediaTrending(query, uri)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err)})
-
-	}
-	c.JSON(200, data)
+	// var query TmDBMediaTrendingQuery
+	// var uri TmDBMediaTrendingUri
+	//
+	// if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	// data, err := FetchMediaTrending(c.Request.Context(), query, uri)
+	// if err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	// c.JSON(200, data)
 }
 
 func (h *MetaRouter) GetMetaDetail(c *gin.Context) {
-	var query TmdbQuery
-	var uri UriParams
-	if !BindAndValidateParams(c, uri, &query, nil) {
-		return
-	}
-	data, err := FetchMetaDetail(query, uri)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err)})
-
-	}
-	c.JSON(200, data)
+	// var query TmdbQuery
+	// var uri TmDBUri
+	// if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	//
+	// data, err := FetchMetaDetail(c.Request.Context(), query, uri)
+	// if err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	// c.JSON(200, data)
 }
 
 func (h *MetaRouter) GetMediaSearch(c *gin.Context) {
-	var query TmdbQuery
-	var uri UriParams
-	if !BindAndValidateParams(c, uri, &query, nil) {
-		return
-	}
-	data, err := FetchMediaSearch(query, uri)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err)})
-
-	}
-	c.JSON(200, data)
+	// var query TmdbQuery
+	// var uri TmDBUri
+	// if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	// data, err := FetchMediaSearch(c.Request.Context(), query, uri)
+	// if err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	// c.JSON(200, data)
 }

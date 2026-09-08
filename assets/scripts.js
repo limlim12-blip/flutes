@@ -1,6 +1,9 @@
-import 'htmx.org'
+import htmx from 'htmx.org';
+import _hyperscript from 'hyperscript.org';
 
-import * as hyperscript from 'hyperscript.org'
+window.htmx = htmx;
+window._hyperscript = _hyperscript;
 
-// Initialize hyperscript.
-hyperscript.browserInit()
+if (typeof window !== 'undefined') {
+    _hyperscript.browserInit();
+}

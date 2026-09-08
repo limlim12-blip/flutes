@@ -40,6 +40,8 @@ tor/
 .parcel-cache
 config.yml
 node_modules
+logs/
+data/
 
 # Editor/IDE
 # .idea/

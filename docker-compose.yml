@@ -9,17 +9,17 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
+      - TZ=Asia/Ho_Chi_Minh
       - VPN_SERVICE_PROVIDER=protonvpn
       - VPN_TYPE=wireguard
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       - SERVER_COUNTRIES=Singapore,Hong Kong,Taiwan,Japan
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_PROVIDER=protonvpn
-      - WIREGUARD_MTU=1280
-      - WIREGUARD_ADDRESSES=10.2.0.2/32
-      - BLOCK_MALICIOUS=off
+      - BLOCK_MALICIOUS=on
       - VERSION_INFORMATION=off
       - HEALTH_TARGET_ADDRESSES=cloudflare.com,google.com
+      - MTU=1280
     ports:
       - "8080:8080/tcp"
       - "2345:2345/tcp"
@@ -28,6 +28,11 @@ services:
     networks:
       - internal
     restart: always
+    healthcheck:
+      test: ["CMD", "ping", "-c", "1", "1.1.1.1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
 
   api:
     build:
@@ -35,7 +40,7 @@ services:
       dockerfile: Dockerfile
     tty: true
     environment:
-      - TERM=xterm-256color
+      - TZ=Asia/Ho_Chi_Minh
     env_file:
       - .env
     volumes:
@@ -58,6 +63,7 @@ services:
     image: groonga/pgroonga:latest-alpine-16
     shm_size: 1g
     environment:
+      TZ: Asia/Ho_Chi_Minh
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     networks:
@@ -70,7 +76,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
       - ./stuff/TMDB_movie_dataset_v11.csv:/stuff/TMDB_movie_dataset_v11.csv
       - ./stuff/Torrents.csv:/stuff/Torrents.csv
       - ./stuff/torrent_match.csv:/stuff/torrent_match.csv
@@ -91,7 +97,6 @@ services:
       retries: 5
 
 volumes:
-  pgdata:
   redisdata:
   gluetun-data:
 networks:

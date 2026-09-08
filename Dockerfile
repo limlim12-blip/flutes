@@ -1,11 +1,11 @@
 #NOTE: https://dev.to/trystan_sarrade/live-reload-and-debugging-go-applications-within-a-docker-container-5d07
 # Use the official Golang image as the base image
-FROM golang:1.26.4-alpine 
+FROM golang:1.27.0-alpine 
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-RUN apk add --no-cache bash curl unzip nodejs npm libstdc++ gcompat
+RUN apk add --no-cache bash curl unzip nodejs npm libstdc++ gcompat ffmpeg
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
 
@@ -29,4 +29,4 @@ EXPOSE 2345
 EXPOSE 8080
 
 # Run air for live-reload. The -c flag is used to specify the configuration file
-CMD ["air", "-c", "air.toml"]
+CMD ["air", "-c", ".air.toml"]

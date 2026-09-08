@@ -1,16 +1,15 @@
-(function () {
+(() => {
 
-      var $parcel$global =
-        typeof globalThis !== 'undefined'
-          ? globalThis
-          : typeof self !== 'undefined'
-          ? self
-          : typeof window !== 'undefined'
-          ? window
-          : typeof global !== 'undefined'
-          ? global
-          : {};
-  
+function $parcel$export(e, n, v, s) {
+  Object.defineProperty(e, n, {get: v, set: s, enumerable: true, configurable: true});
+}
+
+function $parcel$interopDefault(a) {
+  return a && a.__esModule ? a.default : a;
+}
+
+      var $parcel$global = globalThis;
+    
 var $parcel$modules = {};
 var $parcel$inits = {};
 
@@ -42,7 +41,9 @@ if (parcelRequire == null) {
 }
 
 var parcelRegister = parcelRequire.register;
-parcelRegister("hU7Y2", function(module, exports) {
+parcelRegister("97qTT", function(module, exports) {
+
+$parcel$export(module.exports, "default", () => $6a39a2670c78b9ca$export$2e2bcd8739ae039);
 var htmx = function() {
     'use strict';
     // Public API
@@ -4302,12 +4303,13 @@ var /** @typedef {'get'|'head'|'post'|'put'|'delete'|'connect'|'options'|'trace'
  * @property {(swapStyle: HtmxSwapStyle, target: Node, fragment: Node, settleInfo: HtmxSettleInfo) => boolean|Node[]} handleSwap
  * @property {(xhr: XMLHttpRequest, parameters: FormData, elt: Node) => *|string|null} encodeParameters
  * @property {() => string[]|null} getSelectors
- */ $d08dd8c879223922$export$2e2bcd8739ae039 = htmx;
+ */ $6a39a2670c78b9ca$export$2e2bcd8739ae039 = htmx;
 
 });
 
-parcelRequire("hU7Y2");
-var $2eb3f569e520dd6a$exports = {};
+
+var $97qTT = parcelRequire("97qTT");
+var $6524597bb4b0b43c$exports = {};
 "use strict";
 (()=>{
     var __defProp = Object.defineProperty;
@@ -13774,8 +13776,9 @@ var $2eb3f569e520dd6a$exports = {};
 })();
 
 
-// Initialize hyperscript.
-$2eb3f569e520dd6a$exports.browserInit();
+window.htmx = (0, $97qTT.default);
+window._hyperscript = (0, (/*@__PURE__*/$parcel$interopDefault($6524597bb4b0b43c$exports)));
+if (typeof window !== 'undefined') (0, (/*@__PURE__*/$parcel$interopDefault($6524597bb4b0b43c$exports))).browserInit();
 
 })();
 //# sourceMappingURL=scripts.js.map

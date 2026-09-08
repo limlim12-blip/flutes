@@ -3,24 +3,28 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
-)
-
-const (
-	ChannelCrawlerControl string = "crawler:control"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
-	HTTP        HTTPConfig  `yaml:"http"`
-	DB          DBConfig    `yaml:"db"`
-	Redis       RDBConfig   `yaml:"redis"`
-	TorrentConf TorrentConf `yaml:"torrent"`
-	APIkey      APIkey
+	HTTP        ServerConfig `yaml:"http"`
+	DB          DBConfig     `yaml:"db"`
+	Redis       RDBConfig    `yaml:"redis"`
+	TorrentConf TorrentConf  `yaml:"torrent"`
+	APIkey      APIkey       `yaml:"api" env-default:"development"`
+	Env         string       `yaml:"env" env-default:"development"`
 }
 
-type HTTPConfig struct {
-	Port int `yaml:"port" env-default:"8080"`
+type ServerConfig struct {
+	Port               int      `yaml:"port" env-required:"true"`
+	ReadTimeout        int32    `yaml:"read_timeout" env-required:"true"`
+	WriteTimeout       int32    `yaml:"write_timeout" env-required:"true"`
+	IdleTimeOut        int32    `yaml:"idle_timeout" env-required:"true"`
+	CORSAllowedOrigins []string `yaml:"cors_allowed_origins" env-required:"true"`
 }
 
 type RDBConfig struct {
@@ -28,34 +32,56 @@ type RDBConfig struct {
 	Host string `yaml:"host" env-default:"redis"`
 }
 type DBConfig struct {
-	Host     string `yaml:"host" env-default:"localhost"`
-	Port     int    `yaml:"port" env-default:"5432"`
-	Name     string `yaml:"name" env-required:"true"`
-	User     string `yaml:"user" env-required:"true"`
-	Password string `yaml:"password" env-required:"true"`
+	Host            string `yaml:"host" env-default:"localhost"`
+	Port            int    `yaml:"port" env-default:"5432"`
+	Name            string `yaml:"name" env-required:"true"`
+	User            string `yaml:"user" env-required:"true"`
+	Password        string `yaml:"password" env-required:"true"`
+	SSLMode         string `yaml:"sll_mode" env-required:"true"`
+	MaxOpenConns    int32  `yaml:"max_open_conns" env-required:"true"`
+	MaxIdleConns    int32  `yaml:"max_idle_conns" env-required:"true"`
+	MaxConnLifeTime int32  `yaml:"max_conn_lime_time" env-required:"true"`
+	MaxConnIdleTime int32  `yaml:"max_conn_idle_time" env-required:"true"`
 	// PoolSize int    `yaml:"pool_size" env:"DB_POOL_SIZE" env-default:"10"`
 }
 type APIkey struct {
-	TmDB string `yaml:"tmdb" env:"TMDB_API_KEY" env-required:"true"`
+	TmDB      string `yaml:"tmdb" env:"TMDB_API_KEY"`
+	WireGuard string `yaml:"wireguard_private_key" env:"WIREGUARD_PRIVATE_KEY"`
 }
-
+type Memory int64
 type TorrentConf struct {
-	ListenPort int   `yaml:"listen_port" env-default:"0"`
-	MaxMem     int64 `yaml:"max_memory" env-default:"0"`
+	MaxMemClient  int64 `yaml:"max_memory_client" env-default:"0"`
+	MaxMemCrawler int64 `yaml:"max_memory_crawler" env-default:"0"`
+	NumClient     int   `yaml:"num_client" env-default:"2"`
 	// add more
 }
 
 var cfg Config
 
 func Load(configPath string) error {
-	err := cleanenv.ReadConfig(configPath, &cfg)
+	f, err := os.OpenFile("./logs/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		return fmt.Errorf("failed load config:%s", err.Error())
+		panic(err)
+	}
+	consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), zap.InfoLevel),
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(f), zap.InfoLevel),
+	)
+	Log := zap.New(core,
+		zap.AddCaller(),
+		zap.AddStacktrace(zapcore.ErrorLevel),
+	)
+
+	err = cleanenv.ReadConfig(configPath, &cfg)
+	if err != nil {
+		Log.Sugar().Fatalw("failed to load configuration", "error", err)
 	}
 	return nil
 }
-func GetConfig() Config {
-	return cfg
+func GetConfig() *Config {
+	return &cfg
 }
 func (c DBConfig) DSN() string {
 	u := url.URL{
@@ -66,7 +92,7 @@ func (c DBConfig) DSN() string {
 	}
 
 	q := u.Query()
-	q.Set("sslmode", "disable")
+	q.Set("sslmode", cfg.DB.SSLMode)
 	q.Set("options", "-c pg_trgm.similarity_threshold=0.5")
 	u.RawQuery = q.Encode()
 

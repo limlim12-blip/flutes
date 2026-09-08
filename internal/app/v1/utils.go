@@ -1,7 +1,8 @@
 package v1
 
 import (
-	"lim/db/repository"
+	"lim/internal/db/repository"
+	"lim/internal/errors"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -18,26 +19,23 @@ type Handler struct {
 	Engine *gin.Engine
 }
 
-func BindAndValidateParams(c *gin.Context, uriObj any, queryObj any, headerObj any) bool {
+func BindAndValidateParams(c *gin.Context, uriObj any, queryObj any, headerObj any) *errors.ApiError {
 	if uriObj != nil {
 		if err := c.ShouldBindUri(uriObj); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "URI validation failed: " + err.Error()})
-			return false
+			return errors.NewBadRequest("URI validation failed", err)
 		}
 	}
 	if queryObj != nil {
 		if err := c.ShouldBindQuery(queryObj); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Query validation failed: " + err.Error()})
-			return false
+			return errors.NewBadRequest("Queries validation failed", err)
 		}
 	}
 	if headerObj != nil {
 		if err := c.ShouldBindHeader(headerObj); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Header validation failed: " + err.Error()})
-			return false
+			return errors.NewBadRequest("headers validation failed", err)
 		}
 	}
-	return true
+	return nil
 }
 func HtmxRender(c *gin.Context, template templ.Component) {
 	if err := htmx.NewResponse().RenderTempl(c.Request.Context(), c.Writer, template); err != nil {

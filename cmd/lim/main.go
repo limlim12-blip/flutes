@@ -1,53 +1,37 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"lim/db"
-	"lim/db/repository"
+	"errors"
 	"lim/internal/app"
 	"lim/internal/config"
-	. "lim/internal/crawler"
-	"log"
+	"lim/internal/server"
+	"lim/pkg/logger"
 	"net/http"
-
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
 func main() {
-	log.Printf("starto")
-	if err := config.Load("./config.yml"); err != nil {
-		log.Fatalf("Configuration error: %v", err)
-	}
 	Cfg := config.GetConfig()
-	ctx := context.Background()
-	dbCfg, err := pgxpool.ParseConfig(Cfg.DB.DSN())
+	if err := config.Load("./config.yml"); err != nil {
+		panic(err)
+	}
+	logger.Init(Cfg.Env == "development")
+	defer logger.Log.Sync()
+	logger.Sugar.Infow("configuration loaded successfully", "environment", Cfg.Env)
+	server, err := server.New(Cfg)
 	if err != nil {
-		log.Fatalf("parse config: %v", err)
+		logger.Sugar.Fatalw("fail to initialize server", "error", err)
 	}
-	dbCfg.MaxConns = 20
-	dbCfg.MaxConns = 20
-	dbCfg.MinConns = 5
-	pool, err := pgxpool.NewWithConfig(ctx, dbCfg)
-	if err != nil {
-		log.Fatalf("failed create connection pool: %v", err)
-	}
-	defer pool.Close()
-	if err := db.Migrate(pool); err != nil {
-		log.Fatalf("Migration failed: %v", err)
-	}
-	rdb := redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%d", Cfg.Redis.Host, Cfg.Redis.Port)})
-	repo := repository.New(pool)
+	router := app.InitRouter(server.Repo, server.Redis, server.Broker)
+	server.SetupHttpServer(router)
+	go func() {
+		if err = server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Sugar.Fatalw("http server error", "error", err)
+		}
+	}()
+	if err := server.ListenForInterruptSignal(); err != nil {
+		logger.Sugar.Errorw("server forced to shutdown ungracefully", "error", err)
 
-	routersInit := app.InitRouter(repo, rdb)
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", Cfg.HTTP.Port),
-		Handler: routersInit,
-	}
-	go TorSubHub(ctx, rdb, repo)
+	} // -> block
+	logger.Sugar.Infow("application exited")
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("%v", err)
-	}
 }

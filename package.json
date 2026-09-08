@@ -1,28 +1,23 @@
 {
   "name": "project",
   "version": "0.0.1",
-  "description": "Frontend part of the Gowebly project.",
   "license": "MIT",
-  "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
-    "fmt": "prettier --write .",
     "build": "parcel build ./assets/scripts.js ./assets/styles.css --dist-dir ./static",
     "dev": "parcel build ./assets/scripts.js ./assets/styles.css --dist-dir ./static --no-optimize",
     "watch": "parcel watch ./assets/scripts.js ./assets/styles.css --dist-dir ./static --no-optimize"
   },
   "dependencies": {
-    "tailwindcss": "latest",
-    "daisyui": "latest",
-    "hyperscript.org": "latest",
-    "htmx.org": "latest"
+    "dashjs": "latest",
+    "htmx.org": "latest",
+    "hyperscript.org": "latest"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "latest",
-    "@tailwindcss/typography": "latest",
     "@tailwindcss/postcss": "latest",
-    "@parcel/transformer-css": "latest",
-    "parcel": "latest",
+    "buffer": "^6.0.3",
+    "parcel": "^2.16.4",
     "postcss": "latest",
-    "prettier": "latest"
+    "process": "^0.11.10",
+    "tailwindcss": "latest"
   }
 }

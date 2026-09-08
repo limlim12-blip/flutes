@@ -1,0 +1,30 @@
+package pages
+
+import "fmt"
+
+templ VideoPlayerView(sessionID, videoURL string) {
+	<div
+		id="video-container"
+		hx-post={ fmt.Sprintf("/api/v1/video/session/%s/heartbeat", sessionID) }
+		hx-trigger="every 10s"
+		hx-headers={ fmt.Sprintf(`{"X-Watch-Session": "%s"}`, sessionID) }
+		class="flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b"
+	>
+		<video
+			id="video-player"
+			playsinline
+			controls
+			hx-on:reload-video="initVideoPlayer"
+			class="bg-black/90 w-full h-full object-contain transform-gpu will-change-transform backface-hidden z-0 relative"
+		></video>
+	</div>
+	@initVideoPlayer(videoURL)
+}
+
+script initVideoPlayer(url string) {
+    var videoElement = document.getElementById("video-player");
+    if (!videoElement) return;
+    var player = window.dashjs.MediaPlayer().create();
+    player.initialize(videoElement, url, true);
+    console.log("Dash.js player initialized successfully.");
+}

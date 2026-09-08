@@ -20,12 +20,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-/*
-after that delete all the torrent contain .exe
-DELETE FROM torrent_content WHERE infohash IN ( SELECT tc.infohash FROM torrent_content tc WHERE tc.content_name LIKE '%.exe%');
-
-
-*/
 
 type Emptystorage struct {
 }

@@ -253,8 +253,6 @@ func search_TMDB(title string, status Status) []string {
 NOTE: not that fun of a fact:
 To permanently stop developers from relying on a map's order, the Go team made it explicitly random starting in Go 1.0.
 Every time you start a range loop, Go picks a random memory bucket and a random offset to start from
-P/s: this is useless btw, cause the TorrentInfo struct dont have `omitempty`
-in defend, at first it have omitempty tho
 */
 func get_header_and_values(info *PTN.TorrentInfo) ([]string, []string) {
 	header := []string{}

@@ -7,7 +7,6 @@ import (
 	. "lim/internal/service"
 	"lim/templates"
 	"lim/templates/pages"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,24 +23,32 @@ func (h *MediaHandler) RegisterRoutes(group string) {
 	courses := h.handler.Engine.Group(group)
 	courses.GET("/", h.GetHome)
 	courses.GET("/trending/:type/", func(c *gin.Context) {
-		c.Request.URL.Path = "/trending/:type/week"
+		mediaType := c.Param("type")
+		c.Request.URL.Path = fmt.Sprintf("/trending/%s/week", mediaType)
 		h.handler.Engine.HandleContext(c)
 	})
 	courses.GET("/trending/:type/:time_window", h.GetMediaTrending)
 	courses.GET("/search/:type", h.GetMediaSearch)
-	courses.GET("/title/:type/:id", h.GetMetaDetail)
-	courses.GET("/:type/:id/season/:season_number", h.GetMetaSeasonDetail)
+	courses.GET("/detail/:type/:id", h.GetMetaDetail)
+	courses.GET("/detail/:type/:id/season/:season_number", h.GetMetaSeasonDetail)
 }
 
+var title = "Welcome to example!"
+var metaTags = templates.MetaTags(
+	"gowebly, htmx example page, go with htmx",
+	"Welcome to example! You're here because it worked out.",
+)
+
 func (h *MediaHandler) GetMetaSeasonDetail(c *gin.Context) {
-	var query TmdbQuery
-	var uri UriParams
-	if !BindAndValidateParams(c, &uri, &query, nil) {
+	var query TmDBMetaDetailQuery
+	var uri TmDBMetaSeasonDetailUri
+	if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+		c.Error(err)
 		return
 	}
-	data, err := FetchMetaSeasonDetail(query, uri)
+	data, err := FetchMetaSeasonDetail(c, query, uri)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err.Error())})
+		c.Error(err)
 		return
 	}
 	if c.GetHeader("HX-Request") == "true" {
@@ -49,12 +56,8 @@ func (h *MediaHandler) GetMetaSeasonDetail(c *gin.Context) {
 		return
 	}
 	bodyContent := pages.MediaSeasonDetail(data)
-	metaTags := pages.MetaTags(
-		"gowebly, htmx example page, go with htmx",
-		"Welcome to example! You're here because it worked out.",
-	)
 	indexTemplate := templates.Layout(
-		"Welcome to example!",
+		title,
 		metaTags,
 		bodyContent,
 	)
@@ -62,14 +65,15 @@ func (h *MediaHandler) GetMetaSeasonDetail(c *gin.Context) {
 }
 
 func (h *MediaHandler) GetMetaDetail(c *gin.Context) {
-	var query TmdbQuery
-	var uri UriParams
-	if !BindAndValidateParams(c, &uri, &query, nil) {
+	var query TmDBMetaDetailQuery
+	var uri TmDBMetaDetailUri
+	if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+		c.Error(err)
 		return
 	}
-	data, err := FetchMetaDetail(query, uri)
+	data, err := FetchMetaDetail(c, query, uri)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err.Error())})
+		c.Error(err)
 		return
 	}
 	if c.GetHeader("HX-Request") == "true" {
@@ -77,59 +81,59 @@ func (h *MediaHandler) GetMetaDetail(c *gin.Context) {
 		return
 	}
 	bodyContent := pages.MediaDetail(data)
-	metaTags := pages.MetaTags(
-		"gowebly, htmx example page, go with htmx",
-		"Welcome to example! You're here because it worked out.",
-	)
 	indexTemplate := templates.Layout(
-		"Welcome to example!",
+		title,
 		metaTags,
 		bodyContent,
 	)
 	HtmxRender(c, indexTemplate)
 }
 func (h *MediaHandler) GetHome(c *gin.Context) {
-	var query TmdbQuery
-	if !BindAndValidateParams(c, nil, &query, nil) {
+	// var query TmdbQuery
+	// if err := BindAndValidateParams(c, nil, &query, nil); err != nil {
+	// 	c.Error(err)
+	// 	return
+	// }
+	query := TmDBMediaTrendingQuery{Page: 1}
+	mv_data, err := FetchMediaTrending(c, query, TmDBMediaTrendingUri{Type: "movie", TimeWindow: "week"})
+	if err != nil {
+		c.Error(err)
+	}
+	tv_data, err := FetchMediaTrending(c, query, TmDBMediaTrendingUri{Type: "tv", TimeWindow: "week"})
+	if err != nil {
+		c.Error(err)
+	}
+	daily_data, err := FetchMediaTrending(c, query, TmDBMediaTrendingUri{Type: "all", TimeWindow: "day"})
+	if err != nil {
+		c.Error(err)
+	}
+	if len(c.Errors) > 0 {
 		return
 	}
-	mv_uri := MediaTrendingUriParams{Type: "movie", TimeWindow: "day"} //mv
-	mv_data, err := FetchMediaTrending(query, mv_uri)
-	tv_uri := MediaTrendingUriParams{Type: "tv", TimeWindow: "day"} //tv
-	tv_data, err := FetchMediaTrending(query, tv_uri)
-	daily_uri := MediaTrendingUriParams{Type: "all", TimeWindow: "day"} //daily
-	daily_data, err := FetchMediaTrending(query, daily_uri)
-
 	bodyContent := pages.MediaHome(daily_data.Results, tv_data.Results, mv_data.Results)
 	if c.GetHeader("HX-Request") == "true" {
 		HtmxRender(c, bodyContent)
 		return
 	}
 
-	metaTags := pages.MetaTags(
-		"gowebly, htmx example page, go with htmx",
-		"Welcome to example! You're here because it worked out.",
-	)
 	indexTemplate := templates.Layout(
-		"Welcome to example!",
+		title,
 		metaTags,
 		bodyContent,
 	)
 	HtmxRender(c, indexTemplate)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err)})
-	}
 }
 
 func (h *MediaHandler) GetMediaTrending(c *gin.Context) {
-	var query TmdbQuery
-	var uri MediaTrendingUriParams
-	if !BindAndValidateParams(c, &uri, &query, nil) {
+	var query TmDBMediaTrendingQuery
+	var uri TmDBMediaTrendingUri
+	if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+		c.Error(err)
 		return
 	}
-	data, err := FetchMediaTrending(query, uri)
+	data, err := FetchMediaTrending(c, query, uri)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err.Error())})
+		c.Error(err)
 		return
 	}
 	if c.GetHeader("HX-Request") == "true" {
@@ -137,12 +141,8 @@ func (h *MediaHandler) GetMediaTrending(c *gin.Context) {
 		return
 	}
 	bodyContent := pages.MediaTrending(data)
-	metaTags := pages.MetaTags(
-		"gowebly, htmx example page, go with htmx",
-		"Welcome to example! You're here because it worked out.",
-	)
 	indexTemplate := templates.Layout(
-		"Welcome to example!",
+		title,
 		metaTags,
 		bodyContent,
 	)
@@ -150,29 +150,25 @@ func (h *MediaHandler) GetMediaTrending(c *gin.Context) {
 }
 
 func (h *MediaHandler) GetMediaSearch(c *gin.Context) {
-	var query TmdbQuery
-	var uri UriParams
-	if !BindAndValidateParams(c, &uri, &query, nil) {
+	var query TmDBMediaSearchQuery
+	var uri TmDBMediaSearchUri
+	if err := BindAndValidateParams(c, &uri, &query, nil); err != nil {
+		c.Error(err)
 		return
 	}
-	data, err := FetchMediaSearch(query, uri)
+	data, err := FetchMediaSearch(c, query, uri)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Upstream parsing failed: %v", err.Error())})
+		c.Error(err)
 		return
-
 	}
 	bodyContent := pages.MediaSearch(data, query.Query)
 	if c.GetHeader("HX-Request") == "true" {
 		HtmxRender(c, bodyContent)
 		return
 	}
-	metaTags := pages.MetaTags(
-		"gowebly, htmx example page, go with htmx",
-		"Welcome to example! You're here because it worked out.",
-	)
 
 	indexTemplate := templates.Layout(
-		"Welcome to example!",
+		title,
 		metaTags,
 		bodyContent,
 	)

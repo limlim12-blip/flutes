@@ -35,26 +35,6 @@ type Movie struct {
 
 // https://stackoverflow.com/questions/70339777/fetching-csv-data-using-golang
 // https://stackoverflow.com/questions/50421449/golang-write-new-column-of-csv
-/*
-SELECT infohash, content_name, title
-
-DELETE FROM movie_torrents
-WHERE content_name ~ '無修正|アダルト|エロ|ポルノ|AV女優|盗撮|素人|人妻|巨乳|痴漢|熟女|モザイク破壊'
-   OR title ~ '無修正|アダルト|エロ|ポルノ|AV女優|盗撮|素人|人妻|巨乳|痴漢|熟女|モザイク破壊';
-
-DELETE FROM movie_torrents
-WHERE content_name ~* '(FC2-PPV|FC2PPV|Caribbeancom|1pondo|10musume|Heydouga|pacopacomama)';
-
-DELETE FROM movie_torrents
-WHERE content_name ~ '色情|无码|有码|步兵|骑兵|女优|三级片|乱伦|强奸|轮奸|偷拍|淫秽|巨乳|萝莉'
-   OR title ~ '色情|无码|有码|步兵|骑兵|女优|三级片|乱伦|强奸|轮奸|偷拍|淫秽|巨乳|萝莉';
-
-DELETE FROM movie_torrents
-WHERE LOWER(content_name) SIMILAR TO '%(porn|xxx|anal|sex|nsfw|uncensored|jav|milf|gangbang|teen|boudoir|playboy|penthouse|brazzers|realitykings|naughtyamerica)%';
-
-DELETE FROM movie_torrents
-WHERE LOWER(content_name) SIMILAR TO '%(repack|cracked|keygen|patch|activation|trainer|flac|mp3|discography|album|epub|pdf|comic|cbr|cbz|android|apk|ios|windows|office)%';
-*/
 
 func main() {
 	// info, _ := PTN.Parse("DS9 S02 AI_Upscale-1080p")
@@ -214,4 +194,3 @@ func matching() {
 	close(sem)
 	wg.Wait()
 }
-
