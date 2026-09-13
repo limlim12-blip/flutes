@@ -11,8 +11,10 @@ import (
 	"mime"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	"github.com/gin-contrib/cors"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -35,29 +37,26 @@ func InitRouter(repo *repository.Queries, rdb *redis.Client, broker *broker.Brok
 	r.Use(middleware.Ginzap(logger.Log, time.RFC3339, true))
 	r.Use(middleware.RecoveryWithZap(logger.Log, false))
 	r.Use(middleware.ErrorHandler())
+	hand := &v1.Handler{
+		Engine:            r,
+		TranscodeSessions: new(make(map[uuid.UUID]*v1.TranscodeSession)),
+		Client:            api_v1.NewClient(),
+		Repo:              repo,
+		Broker:            broker,
+		Rdb:               rdb,
+		Repository:        repo,
+	}
+
 	//render
-	web := v1.Handler{Engine: r}
-	mediaHandler := render_v1.InitMetaHandler(web)
-	mediaHandler.RegisterRoutes("/")
-
-	videoHandler := render_v1.InitVideoHandler(web)
-	videoHandler.RegisterRoutes("/video")
-
-	contentHandler := render_v1.InitContentHandler(web, repo)
-	contentHandler.RegisterRoutes("/")
-
+	render_v1.InitMetaHandler("/", hand)
+	render_v1.InitContentHandler("/tmdbId/", hand)
+	render_v1.InitVideoHandler("/video", hand)
 	//API
-	app := &v1.APIRouter{Engine: r, Repository: repo}
-	mediaRouter := api_v1.InitMetaRouter(app)
-	mediaRouter.RegisterRoutes("api/v1/meta")
+	api_v1.InitMetaRouter("api/v1/meta", hand)
+	api_v1.InitCrawlerRouter("api/v1/crawler", hand)
 
-	crawlerRouter := api_v1.InitCrawlerRouter(app, rdb, broker)
-	crawlerRouter.RegisterRoutes("api/v1/crawler")
-
-	StreamRouter := api_v1.InitVideoRouter(app)
-	StreamRouter.RegisterRoutes("api/v1/video")
-	InternalRouter := api_v1.InternalRouter{APIRouter: app}
-	InternalRouter.RegisterRoutes("internal/")
+	api_v1.InitVideoRouter("api/v1/video", hand)
+	api_v1.InitInternalRouter("api/v1/internal/", hand)
 
 	return r
 }

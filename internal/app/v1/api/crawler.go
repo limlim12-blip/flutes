@@ -10,19 +10,15 @@ import (
 	"lim/pkg/broker"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
 type CrawlerRouter struct {
-	*APIRouter
-	rdb    *redis.Client
-	broker *broker.Broker
+	*Handler
 }
 
-func InitCrawlerRouter(app *APIRouter, rdb *redis.Client, broker *broker.Broker) CrawlerRouter {
-	var u = CrawlerRouter{rdb: rdb, broker: broker}
-	u.APIRouter = app
-	return u
+func InitCrawlerRouter(router string, app *Handler) {
+	var u = CrawlerRouter{app}
+	u.RegisterRoutes(router)
 }
 
 func (h *CrawlerRouter) RegisterRoutes(group string) {
@@ -40,7 +36,7 @@ func (h *CrawlerRouter) handleCrawlerSignal(c *gin.Context) {
 		return
 	}
 	defer cancel()
-	value, err := f(ctx, uri.Action, models.CrawlerControl, h.broker)
+	value, err := f(ctx, uri.Action, models.CrawlerControl, h.Broker)
 	if err != nil {
 		c.Error(err)
 		return

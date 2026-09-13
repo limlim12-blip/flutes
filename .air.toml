@@ -5,7 +5,7 @@ tmp_dir = ".tmp"
 pre_cmd = ["bun --silent run dev"]
 cmd = "templ generate && CGO_ENABLED=0 go build -gcflags='all=-N -l' -buildvcs=false -o ./.tmp/main ./cmd/lim"
 entrypoint = "./.tmp/main"
-full_bin = "dlv exec ./.tmp/main --listen=0.0.0.0:2345 --headless=true --api-version=2 --accept-multiclient --continue "
+full_bin = "dlv exec ./.tmp/main --listen=0.0.0.0:2345 --headless --api-version=2 --accept-multiclient --continue "
 
 include_dir = ["cmd", "pkg", "internal", "templates"]
 include_ext = ["go", "templ", "html", "json", "js", "ts", "css", "scss"]
@@ -18,8 +18,8 @@ poll = false
 poll_interval = 500
 delay = 1000
 stop_on_error = true
-send_interrupt = false
-kill_delay = 500
+send_interrupt = true  
+kill_delay = 2000
 rerun = false
 rerun_delay = 500
 

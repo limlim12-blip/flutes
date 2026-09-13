@@ -13,17 +13,17 @@ import (
 )
 
 type ContentHandler struct {
-	handler Handler
-	repo    *repository.Queries
+	*Handler
 }
 
-func InitContentHandler(handler Handler, repo *repository.Queries) ContentHandler {
-	return ContentHandler{handler: handler, repo: repo}
+func InitContentHandler(router string, handler *Handler) {
+	m := ContentHandler{handler}
+	m.RegisterRoutes(router)
 }
 
 func (h *ContentHandler) RegisterRoutes(group string) {
-	courses := h.handler.Engine.Group(group)
-	courses.GET("tmdbId/:type/:id", h.getContent)
+	courses := h.Engine.Group(group)
+	courses.GET("/:type/:id", h.getContent)
 	// courses.GET("tmdbId/tv/:tmdb_id/season/:season")
 	// courses.GET("tmdbId/tv/:tmdb_id/season/:season/episode/:episode")
 }
@@ -45,7 +45,7 @@ func (h *ContentHandler) getContent(c *gin.Context) {
 		PageOffset: (query.Page - 1) * 20,
 		PageLimit:  20,
 	}
-	content, err := h.repo.GetFilteredTorrentContents(c, a)
+	content, err := h.Repo.GetFilteredTorrentContents(c, a)
 	path := c.Request.URL.Path
 	cquery := c.Request.URL.RawQuery
 	Sugar.Debugw("get content detail", "path", path, "query", cquery, "content", content, "sqlc query", fmt.Sprintf("%+v", a))

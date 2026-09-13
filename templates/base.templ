@@ -42,13 +42,6 @@ templ Layout(title string, metaTags, bodyContent templ.Component) {
             </script>
 			<script src="/static/scripts.js" defer></script>
 			<link rel="stylesheet" href="/static/styles.css"/>
-			<script>
-                window.addEventListener('DOMContentLoaded', () => {
-                if (window.htmx) {
-                    htmx.config.getCacheBusterParam = true;
-                }
-                });
-            </script>
 		</head>
 		<body
 			class="min-h-screen flex flex-col w-full m-0 p-0 text-black dark:text-white bg-white dark:bg-black border-black dark:border-white"

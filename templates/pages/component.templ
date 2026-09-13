@@ -59,7 +59,7 @@ templ mediaCard(item MediaItem) {
 		title={ item.GetName() }
 		hx-boost="true"
 	>
-		<a href={ fmt.Sprintf("/detail/%s/%d", item.MediaType, item.ID) } class="absolute inset-0 z-10" hx-boost="true" hx-target="#main">
+		<a href={ fmt.Sprintf("/detail/type/%s/id/%d", item.MediaType, item.ID) } class="absolute inset-0 z-10" hx-boost="true" hx-target="#main">
 			<span class="sr-only">{ item.Name }</span>
 		</a>
 		<div>

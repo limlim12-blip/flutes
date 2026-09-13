@@ -12,25 +12,26 @@ import (
 )
 
 type MediaHandler struct {
-	handler Handler
+	*Handler
 }
 
-func InitMetaHandler(handler Handler) MediaHandler {
-	return MediaHandler{handler: handler}
+func InitMetaHandler(router string, handler *Handler) {
+	m := MediaHandler{handler}
+	m.RegisterRoutes(router)
 }
 
 func (h *MediaHandler) RegisterRoutes(group string) {
-	courses := h.handler.Engine.Group(group)
+	courses := h.Engine.Group(group)
 	courses.GET("/", h.GetHome)
-	courses.GET("/trending/:type/", func(c *gin.Context) {
+	courses.GET("/trending/type/:type", func(c *gin.Context) {
 		mediaType := c.Param("type")
 		c.Request.URL.Path = fmt.Sprintf("/trending/%s/week", mediaType)
-		h.handler.Engine.HandleContext(c)
+		h.Engine.HandleContext(c)
 	})
-	courses.GET("/trending/:type/:time_window", h.GetMediaTrending)
-	courses.GET("/search/:type", h.GetMediaSearch)
-	courses.GET("/detail/:type/:id", h.GetMetaDetail)
-	courses.GET("/detail/:type/:id/season/:season_number", h.GetMetaSeasonDetail)
+	courses.GET("/trending/type/:type/:time_window", h.GetMediaTrending)
+	courses.GET("/search/type/:type", h.GetMediaSearch)
+	courses.GET("/detail/type/:type/id/:id", h.GetMetaDetail)
+	courses.GET("/detail/type/:type/id/:id/season/:season_number", h.GetMetaSeasonDetail)
 }
 
 var title = "Welcome to example!"

@@ -6,15 +6,16 @@ import (
 )
 
 type MetaRouter struct {
-	*APIRouter
+	*Handler
 }
 
-func InitMetaRouter(app *APIRouter) MetaRouter {
-	return MetaRouter{app}
+func InitMetaRouter(router string, app *Handler) {
+	m := MetaRouter{app}
+	m.RegisterRoutes(router)
 }
 
 func (h *MetaRouter) RegisterRoutes(group string) {
-	courses := h.APIRouter.Engine.Group(group)
+	courses := h.Engine.Group(group)
 	courses.GET("/discover/:type", h.GetMediaTrending)
 	courses.GET("/search/:type", h.GetMediaSearch)
 	courses.GET("/title/:type/:id", h.GetMetaDetail)

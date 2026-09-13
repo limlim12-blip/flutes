@@ -6,7 +6,6 @@ import (
 	"lim/internal/db/repository"
 	. "lim/internal/models"
 	. "lim/pkg/utils"
-	"net/url"
 	"strconv"
 )
 
@@ -48,7 +47,7 @@ templ MediaSeasonDetail(data TMDBSeason) {
 				@overview(data.Overview)
 			</div>
 		</div>
-		@VideoPlayerView("", "")
+		@VideoPlayerView("", 0)
 		<div id="content-list"></div>
 		<div id="bottom-section">
 			@DisplayEpisode(data.Episodes)
@@ -78,7 +77,7 @@ templ MediaDetail(data TMDBDetail) {
 				@creator(data.CreatedBy)
 			</div>
 		</div>
-		@VideoPlayerView("", "")
+		@VideoPlayerView("", 0)
 		<div id="content-list"></div>
 		<div id="bottom-section">
 			if data.Seasons != nil {
@@ -219,7 +218,7 @@ templ season(seasons []TMDBSeason, TvId uint) {
 			<div class="w-44 shrink-0 border p-1">
 				<div class="relative group cursor-pointer">
 					<a
-						hx-get={ fmt.Sprintf("/detail/tv/%d/season/%d", TvId, season.SeasonNumber) }
+						hx-get={ fmt.Sprintf("/detail/tv/id/%d/season/%d", TvId, season.SeasonNumber) }
 						hx-target="#main"
 						hx-push-url="true"
 						class="absolute inset-0 z-10"
@@ -329,13 +328,19 @@ templ DisplayContent(contents []repository.GetFilteredTorrentContentsRow) {
 							</span>
 							<span>&bull;</span>
 							{{
-								query := url.QueryEscape(content.ContentName)
-								link := fmt.Sprintf("/api/v1/stream/%s?file=%s", content.Infohash, query)
+								query := make(map[string]string)
+								query["hash"] = content.Infohash
+								query["file"] = content.ContentName
+								bytes, _ := json.Marshal(query)
+								vals := string(bytes)
 							}}
 							<button
 								type="button"
 								class="inline-flex items-center border transition-colors"
-								onclick={ playVideo(link) }
+								hx-get="/video/"
+								hx-vals={ vals }
+								hx-target="#video-container"
+								hx-swap="outerHTML"
 							>
 								<!-- Play icon -->
 								<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -354,17 +359,4 @@ templ DisplayContent(contents []repository.GetFilteredTorrentContentsRow) {
 			}
 		</ul>
 	</div>
-}
-
-script playVideo(url string) {
-    const video = document.getElementById('stream-video');
-    const source = document.getElementById('video-source');
-    
-    if (video && source && url) {
-        source.src = url;
-        video.load();
-        video.play().catch(e => console.error("Playback failed:", e));
-    } else {
-        console.error("Video elements missing on the page");
-    }
 }

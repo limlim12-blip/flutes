@@ -238,9 +238,9 @@ func mediaCard(item MediaItem) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 templ.SafeURL
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/detail/%s/%d", item.MediaType, item.ID))
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(fmt.Sprintf("/detail/type/%s/id/%d", item.MediaType, item.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/component.templ`, Line: 62, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/component.templ`, Line: 62, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {

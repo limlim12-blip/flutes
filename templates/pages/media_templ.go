@@ -14,7 +14,6 @@ import (
 	"lim/internal/db/repository"
 	. "lim/internal/models"
 	. "lim/pkg/utils"
-	"net/url"
 	"strconv"
 )
 
@@ -123,7 +122,7 @@ func MediaSeasonDetail(data TMDBSeason) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 41, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 40, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -141,7 +140,7 @@ func MediaSeasonDetail(data TMDBSeason) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("(%s)", data.AirDate[:4]))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 44, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 43, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -164,7 +163,7 @@ func MediaSeasonDetail(data TMDBSeason) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = VideoPlayerView("", "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = VideoPlayerView("", 0).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -234,7 +233,7 @@ func MediaDetail(data TMDBDetail) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(data.Tagline)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 74, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 73, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -260,7 +259,7 @@ func MediaDetail(data TMDBDetail) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = VideoPlayerView("", "").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = VideoPlayerView("", 0).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -428,7 +427,7 @@ func poster(src, text string, mediaType MediaType, id int, season *int) templ.Co
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 117, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 116, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -470,7 +469,7 @@ func DisplayEpisode(eps []Episode) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Episodes (%d)", len(eps)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 124, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 123, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -488,7 +487,7 @@ func DisplayEpisode(eps []Episode) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(episode.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 128, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 127, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 			if templ_7745c5c3_Err != nil {
@@ -513,7 +512,7 @@ func DisplayEpisode(eps []Episode) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(episode.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 137, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 136, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -526,7 +525,7 @@ func DisplayEpisode(eps []Episode) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(episode.EpisodeNumber))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 140, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 139, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -578,7 +577,7 @@ func creator(creators []Creator) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(creator.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 152, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 151, Col: 19}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -631,7 +630,7 @@ func overview(overview string) templ.Component {
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(overview)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 165, Col: 13}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 164, Col: 13}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -699,7 +698,7 @@ func castNcrew(credits Credit) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(people.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 189, Col: 94}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 188, Col: 94}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 			if templ_7745c5c3_Err != nil {
@@ -712,7 +711,7 @@ func castNcrew(credits Credit) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(people.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 190, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 189, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -725,7 +724,7 @@ func castNcrew(credits Credit) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(people.GetRole())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 193, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 192, Col: 117}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 			if templ_7745c5c3_Err != nil {
@@ -738,7 +737,7 @@ func castNcrew(credits Credit) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(people.GetRole())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 194, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 193, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -797,7 +796,7 @@ func genre(genres []Genre) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(genre.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 209, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 208, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -847,9 +846,9 @@ func season(seasons []TMDBSeason, TvId uint) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var28 string
-			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/detail/tv/%d/season/%d", TvId, season.SeasonNumber))
+			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/detail/tv/id/%d/season/%d", TvId, season.SeasonNumber))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 222, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 221, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 			if templ_7745c5c3_Err != nil {
@@ -862,7 +861,7 @@ func season(seasons []TMDBSeason, TvId uint) templ.Component {
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(season.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 227, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 226, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -883,7 +882,7 @@ func season(seasons []TMDBSeason, TvId uint) templ.Component {
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(season.SeasonNumber))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 233, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 232, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -930,7 +929,7 @@ func title(name, airDate string) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 248, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 247, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -948,7 +947,7 @@ func title(name, airDate string) templ.Component {
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("(%s)", airDate[:4]))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 251, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 250, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -996,7 +995,7 @@ func image(src, name string) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(getPosterURL(src))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 264, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 263, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 			if templ_7745c5c3_Err != nil {
@@ -1009,7 +1008,7 @@ func image(src, name string) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 265, Col: 13}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 264, Col: 13}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 			if templ_7745c5c3_Err != nil {
@@ -1069,7 +1068,7 @@ func contentLink(mediaType MediaType, id int, season, episode *int) templ.Compon
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.ResolveAttributeValue(link)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 292, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 291, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var38)
 		if templ_7745c5c3_Err != nil {
@@ -1082,7 +1081,7 @@ func contentLink(mediaType MediaType, id int, season, episode *int) templ.Compon
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(vals)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 293, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 292, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 		if templ_7745c5c3_Err != nil {
@@ -1129,7 +1128,7 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(content.TorrentName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 309, Col: 28}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 308, Col: 28}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -1142,7 +1141,7 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 			var templ_7745c5c3_Var42 string
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(content.ContentName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 309, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 308, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
@@ -1160,7 +1159,7 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%02d", *content.Season))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 314, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 313, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -1179,7 +1178,7 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 				var templ_7745c5c3_Var44 string
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%02d", *content.Episode))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 317, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 316, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -1207,7 +1206,7 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(FormatBytes(content.SizeBytes))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 324, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 323, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -1220,7 +1219,7 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(*content.Seeders))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 328, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 327, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
@@ -1230,22 +1229,25 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			query := url.QueryEscape(content.ContentName)
-			link := fmt.Sprintf("/api/v1/stream/%s?file=%s", content.Infohash, query)
-			templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, playVideo(link))
+			query := make(map[string]string)
+			query["hash"] = content.Infohash
+			query["file"] = content.ContentName
+			bytes, _ := json.Marshal(query)
+			vals := string(bytes)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<button type=\"button\" class=\"inline-flex items-center border transition-colors\" hx-get=\"/video/\" hx-vals=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<button type=\"button\" class=\"inline-flex items-center border transition-colors\" onclick=\"")
+			var templ_7745c5c3_Var47 string
+			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(vals)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/media.templ`, Line: 341, Col: 22}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var47 templ.ComponentScript = playVideo(link)
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47.Call)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\"><!-- Play icon --><svg class=\"w-3.5 h-3.5 fill-current\" viewBox=\"0 0 24 24\"><path d=\"M8 5v14l11-7z\"></path></svg></button> <button type=\"button\" class=\"inline-flex items-center border transition-colors\"><span>🧲</span></button> <button type=\"button\" class=\"inline-flex items-center border transition-colors\"><span>📋</span></button></div></div></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\" hx-target=\"#video-container\" hx-swap=\"outerHTML\"><!-- Play icon --><svg class=\"w-3.5 h-3.5 fill-current\" viewBox=\"0 0 24 24\"><path d=\"M8 5v14l11-7z\"></path></svg></button> <button type=\"button\" class=\"inline-flex items-center border transition-colors\"><span>🧲</span></button> <button type=\"button\" class=\"inline-flex items-center border transition-colors\"><span>📋</span></button></div></div></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1256,25 +1258,6 @@ func DisplayContent(contents []repository.GetFilteredTorrentContentsRow) templ.C
 		}
 		return nil
 	})
-}
-
-func playVideo(url string) templ.ComponentScript {
-	return templ.ComponentScript{
-		Name: `__templ_playVideo_5cc8`,
-		Function: `function __templ_playVideo_5cc8(url){const video = document.getElementById('stream-video');
-    const source = document.getElementById('video-source');
-    
-    if (video && source && url) {
-        source.src = url;
-        video.load();
-        video.play().catch(e => console.error("Playback failed:", e));
-    } else {
-        console.error("Video elements missing on the page");
-    }
-}`,
-		Call:       templ.SafeScript(`__templ_playVideo_5cc8`, url),
-		CallInline: templ.SafeScriptInline(`__templ_playVideo_5cc8`, url),
-	}
 }
 
 var _ = templruntime.GeneratedTemplate

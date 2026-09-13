@@ -82,7 +82,6 @@ func NewClient() *torrent.Client {
 		Sugar.Fatalw("failed to initialize streaming tor client", "error", err)
 	}
 	return c
-
 }
 func getBasePort() (port int) {
 	data, err := os.ReadFile("/tmp/gluetun/forwarded_port")

@@ -57,6 +57,7 @@ type TorrentConf struct {
 }
 
 var cfg Config
+var Duration = 10
 
 func Load(configPath string) error {
 	f, err := os.OpenFile("./logs/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
