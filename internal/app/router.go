@@ -34,6 +34,16 @@ func InitRouter(repo *repository.Queries, rdb *redis.Client, broker *broker.Brok
 	// 	corsConfig.AllowOrigins = config.GetConfig().HTTP.CORSAllowedOrigins
 	// }
 	r.Static("/static", "./static")
+	// CacheControlMiddleware := func() gin.HandlerFunc {
+	// 	return func(c *gin.Context) {
+	// 		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	// 		c.Next()
+	// 	}
+	// }
+	// staticGroup := r.Group("/static", CacheControlMiddleware())
+	// {
+	// 	staticGroup.Static("/", "./static")
+	// }
 	r.Use(middleware.Ginzap(logger.Log, time.RFC3339, true))
 	r.Use(middleware.RecoveryWithZap(logger.Log, false))
 	r.Use(middleware.ErrorHandler())

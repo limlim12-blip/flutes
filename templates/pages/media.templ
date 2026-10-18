@@ -6,270 +6,72 @@ import (
 	"lim/internal/db/repository"
 	. "lim/internal/models"
 	. "lim/pkg/utils"
-	"strconv"
+	"net/url"
 )
 
+templ PageContainer(extraClasses string) {
+	<div class={ "mx-auto px-4 font-sans  max-w-6xl py-6" }>
+		{ children... }
+	</div>
+}
+
+templ DetailLayout(poster templ.Component, info templ.Component, bottom templ.Component) {
+	@PageContainer("") {
+		<div id="top-section" class="flex flex-col md:flex-row items-start gap-8 mb-8">
+			@poster
+			<div>
+				@info
+			</div>
+		</div>
+		@VideoEmptyView()
+		<div id="content-list"></div>
+		<div id="bottom-section">
+			@bottom
+		</div>
+	}
+}
+
 templ MediaHome(daily_data []MediaItem, tv_data []MediaItem, movie_data []MediaItem) {
-	<div class="w-full max-w-6xl mx-auto px-4 py-6 font-sans ">
+	@PageContainer("") {
 		@gridHeader("Home")
 		<div>
 			<h2 class="text-xl font-serif font-normal border-b pb-1 mb-4">Trending Today</h2>
 			@mediaGrid(daily_data[:4])
 		</div>
 		<div>
-			<h2 class="text-xl font-serif font-normal border-b pb-1 mb-4">Trending Today</h2>
+			<h2 class="text-xl font-serif font-normal border-b pb-1 mb-4">Trending TV</h2>
 			@mediaGrid(tv_data[:12])
 		</div>
 		<div>
-			<h2 class="text-xl font-serif font-normal border-b pb-1 mb-4">Trending Today</h2>
+			<h2 class="text-xl font-serif font-normal border-b pb-1 mb-4">Trending Movies</h2>
 			@mediaGrid(movie_data[:12])
 		</div>
-	</div>
+	}
+}
+
+templ MediaPaginatedGrid(title string, data TMDBResponse, url *url.URL) {
+	@PageContainer("") {
+		@gridHeader(title)
+		@pagination(data.Page, data.TotalPages, url)
+		@mediaGrid(data.Results)
+		@pagination(data.Page, data.TotalPages, url)
+	}
 }
 
 templ MediaSeasonDetail(data TMDBSeason) {
-	<div class="max-w-4xl mx-auto px-4 py-8 font-sans">
-		<div id="top-section" class="flex flex-col md:flex-row items-start gap-8 mb-8">
-			<button _="on click put 'Hyperscript is working!' into me">
-				Click me to test
-			</button>
-			@poster(data.PosterPath, data.ShowName, data.GetMediaType(), int(data.SeriesID), Ptr(int(data.SeasonNumber)))
-			<div>
-				@title(data.GetName(), "")
-				<h2 class="text-xl font-serif italic text-gray-700 dark:text-gray-300 mb-4">
-					{ data.Name }
-					if len(data.AirDate) >= 4 {
-						<span class="not-italic text-sm font-mono">
-							{ fmt.Sprintf("(%s)", data.AirDate[:4]) }
-						</span>
-					}
-				</h2>
-				@overview(data.Overview)
-			</div>
-		</div>
-		@VideoPlayerView("", 0)
-		<div id="content-list"></div>
-		<div id="bottom-section">
-			@DisplayEpisode(data.Episodes)
-		</div>
-	</div>
+	@DetailLayout(
+		poster(data.PosterPath, data.ShowName, data.GetMediaType(), int(data.SeriesID), Ptr(int(data.SeasonNumber))),
+		seasonInfo(data),
+		displayEpisode(data.Episodes),
+	)
 }
 
 templ MediaDetail(data TMDBDetail) {
-	<div class="max-w-4xl mx-auto px-4 py-8 font-sans">
-		<div id="top-section" class="flex flex-col md:flex-row items-start gap-8 mb-8">
-			{{
-				var tit string
-				if data.Name != "" {
-					tit = "Tv Series"
-				} else {
-					tit = "Movie"
-				}
-			}}
-			@poster(data.PosterPath, tit, data.GetMediaType(), int(data.Id), nil)
-			<div>
-				@title(data.GetName(), data.GetDate())
-				<div class="italic text-sm mb-3">
-					{ data.Tagline }
-				</div>
-				@genre(data.Genres)
-				@overview(data.Overview)
-				@creator(data.CreatedBy)
-			</div>
-		</div>
-		@VideoPlayerView("", 0)
-		<div id="content-list"></div>
-		<div id="bottom-section">
-			if data.Seasons != nil {
-				@season(data.Seasons, data.Id)
-			}
-			@castNcrew(data.GetCredits())
-		</div>
-	</div>
-}
-
-templ MediaTrending(data TMDBResponse) {
-	<div class="max-w-6xl mx-auto px-4 py-6 font-sans">
-		@gridHeader("Trending Catalog")
-		@pagination(data.Page, data.TotalPages)
-		@mediaGrid(data.Results)
-		@pagination(data.Page, data.TotalPages)
-	</div>
-}
-
-templ MediaSearch(data TMDBResponse, query string) {
-	<div class="max-w-6xl mx-auto px-4 py-6 min-h-screen font-sans">
-		@gridHeader(fmt.Sprintf("Search results for: %s", query))
-		@pagination(data.Page, data.TotalPages)
-		@mediaGrid(data.Results)
-		@pagination(data.Page, data.TotalPages)
-	</div>
-}
-
-templ poster(src, text string, mediaType MediaType, id int, season *int) {
-	<div class="relative w-56 shrink-0 border p-1 hover:underline">
-		@contentLink(mediaType, id, season, nil)
-		<div class="relative w-full aspect-2/3">
-			@image(src, strconv.Itoa(id)+text)
-		</div>
-		<div class="text-center text-xs py-2 border-t font-mono">
-			{ text }
-		</div>
-	</div>
-}
-
-templ DisplayEpisode(eps []Episode) {
-	<h2 class="text-xl font-serif border-b pb-1 mb-6">
-		{ fmt.Sprintf("Episodes (%d)", len(eps)) }
-	</h2>
-	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-		for _, episode := range eps {
-			<div class="relative border inline-block  p-2 flex-col gap-1" title={ episode.Name }>
-				<div class="aspect-video group relative w-full overflow-hidden">
-					@image(episode.StillPath, episode.Name)
-					@contentLink("tv", episode.ShowId, Ptr(episode.SeasonNumber), Ptr(episode.EpisodeNumber))
-					<button type="button" class="absolute inset-0 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20  pointer-events-none">
-						<img alt="Play"/>
-					</button>
-				</div>
-				<div class="text-xs font-bold mt-1 truncate">
-					{ episode.Name }
-				</div>
-				<div class="text-[11px] font-mono text-gray-800 dark:text-gray-400">
-					Episode { fmt.Sprint(episode.EpisodeNumber) }
-				</div>
-			</div>
-		}
-	</div>
-}
-
-templ creator(creators []Creator) {
-	<div class="flex flex-row flex-wrap gap-6 text-xs border-t  pt-3">
-		for _, creator := range creators {
-			<div class="group">
-				<span class="font-bold underline cursor-pointer dark:group-hover:text-gray-600 group-hover:text-gray-400">
-					{ creator.Name }
-				</span>
-				<div class="text-gray-800 dark:text-gray-400 dark:group-hover:text-gray-600 group-hover:text-gray-400">Creator</div>
-			</div>
-		}
-	</div>
-}
-
-templ overview(overview string) {
-	if overview == "" {
-		<p class="text-sm leading-relaxed mb-4 line-clamp-3">NO DATA FOR THIS :(</p>
-	} else {
-		<p class="text-sm leading-relaxed mb-4">
-			{ overview }
-		</p>
-	}
-}
-
-templ castNcrew(credits Credit) {
-	<h2 class="text-xl font-serif border-b  pb-1 mb-4">Cast & Crew</h2>
-	<div class="flex gap-4 overflow-x-auto pb-4">
-		{{
-			var peoples []People
-			peoples = append(peoples, credits.Cast...)
-			peoples = append(peoples, credits.Crew...)
-			lenPeoples := len(peoples)
-			minVal := min(20, lenPeoples)
-			peoples = peoples[:minVal]
-		}}
-		if len(peoples) == 0 {
-			<h2 class="text-xl font-serif font-bold">No data</h2>
-		}
-		for _, people := range peoples {
-			<div class="w-36 shrink-0 border p-1 group">
-				<div class="relative w-full aspect-2/3 ">
-					@image(people.ProfilePath, people.Name)
-				</div>
-				<div class="text-center text-xs font-bold py-2 border-t truncate px-1" title={ people.Name }>
-					{ people.Name }
-				</div>
-				<hr class="border-gray-400"/>
-				<div class="text-center text-[11px] text-gray-800 dark:text-gray-400 pb-1 truncate px-1" title={ people.GetRole() }>
-					{ people.GetRole() }
-				</div>
-			</div>
-		}
-	</div>
-}
-
-templ genre(genres []Genre) {
-	<div class="text-xs mb-4">
-		{{ limit := min(4, len(genres)) }}
-		for i, genre := range genres[:limit] {
-			if i > 0 {
-				<span>, </span>
-			}
-			<span class="underline cursor-pointer dark:hover:text-gray-600 hover:text-gray-400">
-				{ genre.Name }
-			</span>
-		}
-	</div>
-}
-
-templ season(seasons []TMDBSeason, TvId uint) {
-	<h2 class="text-xl font-serif border-b  pb-1 mb-4">Seasons</h2>
-	<div class="flex gap-4 overflow-x-auto pb-4">
-		for _, season := range seasons {
-			<div class="w-44 shrink-0 border p-1">
-				<div class="relative group cursor-pointer">
-					<a
-						hx-get={ fmt.Sprintf("/detail/tv/id/%d/season/%d", TvId, season.SeasonNumber) }
-						hx-target="#main"
-						hx-push-url="true"
-						class="absolute inset-0 z-10"
-					>
-						<span class="sr-only">{ season.Name }</span>
-					</a>
-					<div class="relative w-full aspect-2/3 ">
-						@image(season.PosterPath, season.Name)
-					</div>
-					<div class="text-center text-xs py-2 border-t  font-medium group-hover:font-bold group-hover:underline">
-						Season { fmt.Sprint(season.SeasonNumber) }
-					</div>
-				</div>
-				//<div class="text-center text-xs border-t font-mono hover:font-bold">
-				//	<button type="button">
-				//		EXPAND
-				//	</button>
-				//</div>
-			</div>
-		}
-	</div>
-}
-
-templ title(name, airDate string) {
-	<h1 class="text-3xl font-serif font-normal mb-1">
-		{ name }
-		if len(airDate) >= 4 {
-			<span class="text-base font-mono font-light">
-				{ fmt.Sprintf("(%s)", airDate[:4]) }
-			</span>
-		}
-	</h1>
-}
-
-templ image(src, name string) {
-	if src != "" {
-		<div id="img-place-holder" class="absolute inset-0 flex items-center justify-center text-xs">
-			Loading...
-		</div>
-		<img
-			class="absolute z-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
-			src={ getPosterURL(src) }
-			alt={ name }
-			loading="lazy"
-			_="on load add .opacity-100 to me"
-		/>
-	} else {
-		<div class="relative w-full h-full flex items-center justify-center">
-			<span>[No Image]</span>
-		</div>
-	}
+	@DetailLayout(
+		poster(data.PosterPath, getMediaLabel(data.Name), data.GetMediaType(), int(data.Id), nil),
+		mediaInfo(data),
+		mediaBottom(data),
+	)
 }
 
 templ contentLink(mediaType MediaType, id int, season, episode *int) {
@@ -301,6 +103,13 @@ templ DisplayContent(contents []repository.GetFilteredTorrentContentsRow) {
 			Available Torrents
 		</div>
 		<ul class="divide-y">
+			if len(contents) == 0 {
+				<li class="p-3 hover:bg-gray-100 dark:hover:bg-[rgb(27,29,33)] transition-colors">
+					<div class="flex flex-col gap-1.5">
+						0 Available Torrents for this content
+					</div>
+				</li>
+			}
 			for _, content := range contents {
 				<li class="p-3 hover:bg-gray-100 dark:hover:bg-[rgb(27,29,33)] transition-colors">
 					<div class="flex flex-col gap-1.5">
@@ -337,7 +146,7 @@ templ DisplayContent(contents []repository.GetFilteredTorrentContentsRow) {
 							<button
 								type="button"
 								class="inline-flex items-center border transition-colors"
-								hx-get="/video/"
+								hx-get="/video/start"
 								hx-vals={ vals }
 								hx-target="#video-container"
 								hx-swap="outerHTML"

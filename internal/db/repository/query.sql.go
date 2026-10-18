@@ -47,7 +47,7 @@ WHERE ($1::int IS NULL OR tc.match_id = $1)
     AND ($4::text IS NULL OR tc.resolution = $4)
     AND ($5::int IS NULL OR tc.season = $5)
     AND ($6::int IS NULL OR tc.episode = $6)
-ORDER BY t.seeders DESC
+ORDER BY t.seeders DESC, tc.content_name ASC
 LIMIT $8 OFFSET $7
 `
 

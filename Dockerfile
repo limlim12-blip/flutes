@@ -1,13 +1,15 @@
 #NOTE: https://dev.to/trystan_sarrade/live-reload-and-debugging-go-applications-within-a-docker-container-5d07
 # Use the official Golang image as the base image
-FROM golang:1.27.0-alpine 
+FROM golang:1.27.0-bookworm
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-RUN apk add --no-cache bash curl unzip nodejs npm libstdc++ gcompat ffmpeg
+RUN apt-get update && apt-get install -y \
+    bash curl unzip nodejs npm ffmpeg 
 RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:$PATH"
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
 
 # Install air, used to hot reload the application
 RUN go install github.com/go-delve/delve/cmd/dlv@latest && \
@@ -16,8 +18,9 @@ RUN go install github.com/go-delve/delve/cmd/dlv@latest && \
 
 # Copy go mod and sum files and install dependencies
 COPY go.mod go.sum ./
-COPY pkg/ ./pkg/
 
+COPY pkg/ ./pkg/
+ 
 RUN go mod download
 
 COPY ./cmd/ ./cmd/

@@ -1,17 +1,18 @@
 package api
 
 import (
-	"io"
+	"bufio"
+	. "lim/pkg/logger"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	. "lim/internal/app/v1"
-)
-
-var (
-	ActiveSessions = make(map[string]*TranscodeSession)
+	"lim/internal/config"
+	"lim/internal/errors"
 )
 
 type InternalRouter struct {
@@ -25,40 +26,67 @@ func InitInternalRouter(router string, hand *Handler) {
 }
 func (s *InternalRouter) RegisterRoutes(group string) {
 	courses := s.Engine.Group(group)
-	courses.POST("/transcode_stats", HandleTranscodeStats)
+	courses.POST("/session/:session/transcode_stats", s.HandleTranscodeStats)
 }
 
-func HandleTranscodeStats(c *gin.Context) {
-	sessionKey := c.Query("session")
+func (s *InternalRouter) HandleTranscodeStats(c *gin.Context) {
+	sessionKey := c.Param("session")
 
-	session, exists := ActiveSessions[sessionKey]
-
-	if !exists || session == nil || session.Cmd == nil {
-		c.String(http.StatusOK, "Ignored")
+	ssid, err := uuid.Parse(sessionKey)
+	if err != nil {
+		c.Error(errors.NewBadRequest("invalid session uuid", err))
+		return
+	}
+	ss, exists := (*s.TranscodeSessions)[ssid]
+	if !exists {
+		c.Error(errors.NewBadRequest("session does not exist", nil))
 		return
 	}
 
-	body, _ := io.ReadAll(c.Request.Body)
-	fields := strings.Split(string(body), "\n")
-	var state = make(map[string]string)
+	// Use a scanner to read streaming lines from FFmpeg's HTTP POST body
+	scanner := bufio.NewScanner(c.Request.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		data := strings.SplitN(line, "=", 2)
+		if len(data) != 2 {
+			continue
+		}
 
-	for _, field := range fields {
-		data := strings.SplitN(string(field), "=", 2)
-		if len(data) == 2 {
-			state[strings.TrimSpace(data[0])] = strings.TrimSpace(data[1])
+		key := strings.TrimSpace(data[0])
+		val := strings.TrimSpace(data[1])
+
+		Sugar.Debugw("field", "key", key, "val", val)
+		if key == "out_time_us" {
+			us, err := strconv.ParseInt(val, 10, 64)
+			if err != nil || us < 0 {
+				continue
+			}
+
+			chunk := int64(us/10000000) + ss.SeekChunk
+
+			Sugar.Debugw("field", "chunk", chunk, "cur_chunk", ss.GetLastRequestedChunk()+config.GetConfig().Ffmpeg.ChunkGap)
+			if chunk > ss.GetLastRequestedChunk()+config.GetConfig().Ffmpeg.ChunkGap {
+				Sugar.Debugw("ss stop")
+				ss.STOP()
+				break
+			}
+			ss.SetCurrentChunk(chunk)
 		}
 	}
-	//TODO state of the session -> hadnle stop/cont 	// 10000000 = 1s
-	// frame=35308
-	// fps=105.40
-	// stream_0_0_q=28.0
-	// bitrate=2194.6kbits/s
-	// total_size=403963952
-	// out_time_us=1472554417 -> us = ms microseconds = milliseconds :D
-	// out_time_ms=1472554417
-	// out_time=00:24:32.554417
-	// dup_frames=0
-	// drop_frames=0
-	// speed= 4.4x
-	// progress=continue
+
+	c.Status(http.StatusOK)
 }
+
+//TODO state of the session -> hadnle stop/cont 	// 10000000 = 1s
+// frame=35308
+// fps=105.40
+// stream_0_0_q=28.0
+// bitrate=2194.6kbits/s
+// total_size=403963952
+// out_time_us=1472554417 -> us = ms microseconds = milliseconds :D
+// out_time_ms=1472554417
+// out_time=00:24:32.554417
+// dup_frames=0
+// drop_frames=0
+// speed= 4.4x
+// progress=continue

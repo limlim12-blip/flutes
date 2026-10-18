@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "fmt"
 
-func VideoPlayerView(sessionID string, triggerTime int) templ.Component {
+func VideoEmptyView() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -31,48 +31,57 @@ func VideoPlayerView(sessionID string, triggerTime int) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if sessionID == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"video-container\" class=\"relative flex justify-center items-center w-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90\"><!-- Centered text --><span class=\"text-sm text-gray-500 font-mono\">CHOOOOOSSESEEE FILEEE TO PLAYY</span><!-- Pinned to top-right --><span class=\"absolute top-3 left-4 text-xs text-gray-500 font-mono\">🡑 Click here 🡑 </span></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"video-container\" hx-get=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/video/session/%s/heartbeat", sessionID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/video.templ`, Line: 16, Col: 65}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-trigger=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("every %ds", triggerTime))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/video.templ`, Line: 17, Col: 53}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90\"><div id=\"video-player\" _=\"on waiting in .video-player log 'menu item clicked'\"><div class=\"flex flex-col items-center gap-2\"><span class=\"loading loading-spinner loading-lg text-primary\"></span> <span class=\"text-sm text-gray-400 font-mono\">waito.............</span></div></div></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"video-container\" class=\"relative flex justify-center items-center w-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90\"><span class=\"text-sm text-gray-500 font-mono\">CHOOOOOSSESEEE FILEEE TO PLAYY</span> <span class=\"absolute top-3 left-4 text-xs text-gray-500 font-mono\">🡑 Click here 🡑</span></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		return nil
 	})
 }
 
-func VideoPlayer(sessionID string) templ.Component {
+func VideoLoadingView(sessionID string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"video-container\" hx-get=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/video/session/%s", sessionID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/video.templ`, Line: 15, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-trigger=\"every 2s\" hx-swap=\"outerHTML\" class=\"flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90\"><div id=\"video-player\"><div class=\"flex flex-col items-center gap-2\"><span class=\"loading loading-spinner loading-lg text-primary\"></span> <span class=\"text-sm text-gray-400 font-mono\">waito.............</span></div></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func VideoPlayingView(sessionID string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -93,78 +102,28 @@ func VideoPlayer(sessionID string) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div id=\"video-player\" _=\"on waiting in .video log 'menu item clicked'\"><video id=\"video\" playsinline controls class=\"bg-black/90 w-full h-full object-contain transform-gpu will-change-transform backface-hidden z-0 relative\"></video>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div id=\"video-container\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = InitVideoPlayer(fmt.Sprintf("/api/v1/video/session/%s/dash/manifest.mpd", sessionID)).Render(ctx, templ_7745c5c3_Buffer)
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/video/session/%s/keepalive", sessionID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/video.templ`, Line: 32, Col: 64}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"flex flex-col items-center gap-2\"><span class=\"loading loading-spinner loading-lg text-primary\"></span> <span class=\"text-sm text-gray-400 font-mono\">waito.............</span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-trigger=\"every 10s\" hx-swap=\"none\" class=\"flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90\"><video id=\"video-element\" playsinline controls class=\"w-full h-full object-contain transform-gpu will-change-transform z-0 relative\"></video>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return nil
-	})
-}
-
-func VideoPlayerReady(sessionID string) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div id=\"video-container\" hx-post=\"")
+		templ_7745c5c3_Err = InitVideoPlayer(fmt.Sprintf("/api/v1/video/session/%s/hls/stream/manifest.m3u8", sessionID)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/api/v1/video/session/%s/heartbeat", sessionID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/video.templ`, Line: 56, Col: 72}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" hx-trigger=\"every 10s\" hx-headers=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"X-Watch-Session": "%s"}`, sessionID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/video.templ`, Line: 58, Col: 66}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-swap=\"none\" class=\"flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b\"><video id=\"video-player\" playsinline controls class=\"bg-black/90 w-full h-full object-contain transform-gpu will-change-transform backface-hidden z-0 relative\"></video>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = InitVideoPlayer(fmt.Sprintf("/api/v1/video/session/%s/dash/manifest.mpd", sessionID)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -172,16 +131,21 @@ func VideoPlayerReady(sessionID string) templ.Component {
 	})
 }
 
-// https://reference.dashif.org/dash.js/nightly/samples/index.html
-func InitVideoPlayer(manifestUrl string) templ.ComponentScript {
+func InitVideoPlayer(url string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_InitVideoPlayer_cf06`,
-		Function: `function __templ_InitVideoPlayer_cf06(manifestUrl){var videoElement = document.getElementById("video-player");
-    window.dashPlayer = window.dashjs.MediaPlayer().create();
-    window.dashPlayer.initialize(videoElement, manifestUrl, true);
+		Name: `__templ_InitVideoPlayer_d270`,
+		Function: `function __templ_InitVideoPlayer_d270(url){let v = document.getElementById('video-element');
+    if (Hls.isSupported()) {
+        var h = new Hls({ shouldRetry: () => true, fragLoadingMaxRetry: 1000, fragLoadingRetryDelay: 1000,});
+        h.loadSource(url)
+        h.attachMedia(v)
+        h.on('hlsError', (_, d) => d.fatal && h.startLoad());
+    } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+        v.src = url;
+    }
 }`,
-		Call:       templ.SafeScript(`__templ_InitVideoPlayer_cf06`, manifestUrl),
-		CallInline: templ.SafeScriptInline(`__templ_InitVideoPlayer_cf06`, manifestUrl),
+		Call:       templ.SafeScript(`__templ_InitVideoPlayer_d270`, url),
+		CallInline: templ.SafeScriptInline(`__templ_InitVideoPlayer_d270`, url),
 	}
 }
 

@@ -15,7 +15,7 @@ import (
 	"github.com/anacrolix/torrent/storage"
 )
 
-// try to diy, make it different from https://github.com/torrplay/torrplay/blob/main/pkg/storage/memory.go. After 1 day it looked like a cheap copy. gud
+// https://github.com/torrplay/torrplay/blob/main/pkg/storage/memory.go. After 1 day it looked like a cheap copy. gud
 // make([]any, i) -> i = len = initalized mem != cap(=alocated mem)
 // PieceImpl create dynamicly, each time client readat writeat some sort -> can not store data on it -> store else where :O
 // copy need len not cap -> initalized mem not alocated
@@ -72,16 +72,17 @@ func (s *EmptyStorage) Size() {
 	s.mu.Unlock()
 }
 
+// mimic sectionreader
 func (p *EmptyPiece) ReadAt(b []byte, off int64) (n int, err error) {
 	p.storage.mu.Lock()
 	defer p.storage.mu.Unlock()
+	if off < 0 || p.length < off {
+		log.Print("this is who fault: pl<off")
+		return 0, io.EOF
+	}
 	d, ok := p.storage.dataMap[p.path]
 	if !ok || d == nil || d.data == nil {
 		log.Printf("this is who fault: ok: %v - d is nil: %v", ok, d == nil)
-		return 0, io.EOF
-	}
-	if p.length < off {
-		log.Print("this is who fault: pl<off")
 		return 0, io.EOF
 	}
 	end := off + int64(len(b))

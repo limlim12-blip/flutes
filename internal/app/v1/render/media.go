@@ -8,6 +8,7 @@ import (
 	"lim/templates"
 	"lim/templates/pages"
 
+	"github.com/angelofallars/htmx-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -52,7 +53,7 @@ func (h *MediaHandler) GetMetaSeasonDetail(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	if c.GetHeader("HX-Request") == "true" {
+	if htmx.IsHTMX(c.Request) {
 		HtmxRender(c, pages.MediaSeasonDetail(data))
 		return
 	}
@@ -77,7 +78,7 @@ func (h *MediaHandler) GetMetaDetail(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	if c.GetHeader("HX-Request") == "true" {
+	if htmx.IsHTMX(c.Request) {
 		HtmxRender(c, pages.MediaDetail(data))
 		return
 	}
@@ -112,7 +113,7 @@ func (h *MediaHandler) GetHome(c *gin.Context) {
 		return
 	}
 	bodyContent := pages.MediaHome(daily_data.Results, tv_data.Results, mv_data.Results)
-	if c.GetHeader("HX-Request") == "true" {
+	if htmx.IsHTMX(c.Request) {
 		HtmxRender(c, bodyContent)
 		return
 	}
@@ -137,11 +138,11 @@ func (h *MediaHandler) GetMediaTrending(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	if c.GetHeader("HX-Request") == "true" {
-		HtmxRender(c, pages.MediaTrending(data))
+	bodyContent := pages.MediaPaginatedGrid("Trending", data, c.Request.URL)
+	if htmx.IsHTMX(c.Request) {
+		HtmxRender(c, bodyContent)
 		return
 	}
-	bodyContent := pages.MediaTrending(data)
 	indexTemplate := templates.Layout(
 		title,
 		metaTags,
@@ -162,12 +163,11 @@ func (h *MediaHandler) GetMediaSearch(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	bodyContent := pages.MediaSearch(data, query.Query)
-	if c.GetHeader("HX-Request") == "true" {
+	bodyContent := pages.MediaPaginatedGrid("Search Results", data, c.Request.URL)
+	if htmx.IsHTMX(c.Request) {
 		HtmxRender(c, bodyContent)
 		return
 	}
-
 	indexTemplate := templates.Layout(
 		title,
 		metaTags,

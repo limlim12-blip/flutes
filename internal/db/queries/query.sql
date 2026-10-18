@@ -68,5 +68,5 @@ WHERE (sqlc.narg('match_id')::int IS NULL OR tc.match_id = sqlc.narg('match_id')
     AND (sqlc.narg('resolution')::text IS NULL OR tc.resolution = sqlc.narg('resolution'))
     AND (sqlc.narg('season')::int IS NULL OR tc.season = sqlc.narg('season'))
     AND (sqlc.narg('episode')::int IS NULL OR tc.episode = sqlc.narg('episode'))
-ORDER BY t.seeders DESC
+ORDER BY t.seeders DESC, tc.content_name ASC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);

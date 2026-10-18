@@ -9,6 +9,7 @@ import (
 	. "lim/pkg/logger"
 	"lim/templates/pages"
 
+	"github.com/angelofallars/htmx-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,7 +55,7 @@ func (h *ContentHandler) getContent(c *gin.Context) {
 		c.Error(errors.NewInternal("Upstream parsing failed", err))
 		return
 	}
-	if c.GetHeader("HX-Request") == "true" {
+	if htmx.IsHTMX(c.Request) {
 		HtmxRender(c, pages.DisplayContent(content))
 		return
 	}

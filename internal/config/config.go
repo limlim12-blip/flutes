@@ -11,6 +11,7 @@ import (
 )
 
 type Config struct {
+	Ffmpeg      Ffmpeg
 	HTTP        ServerConfig `yaml:"http"`
 	DB          DBConfig     `yaml:"db"`
 	Redis       RDBConfig    `yaml:"redis"`
@@ -55,9 +56,14 @@ type TorrentConf struct {
 	NumClient     int   `yaml:"num_client" env-default:"2"`
 	// add more
 }
+type Ffmpeg struct {
+	ChunkGap      int64
+	ChunkDuration int64
+}
 
 var cfg Config
-var Duration = 10
+
+const Duration int64 = 10
 
 func Load(configPath string) error {
 	f, err := os.OpenFile("./logs/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -79,6 +85,7 @@ func Load(configPath string) error {
 	if err != nil {
 		Log.Sugar().Fatalw("failed to load configuration", "error", err)
 	}
+	cfg.Ffmpeg.ChunkGap = 6
 	return nil
 }
 func GetConfig() *Config {

@@ -2,77 +2,56 @@ package pages
 
 import "fmt"
 
-templ VideoPlayerView(sessionID string, triggerTime int) {
-	if sessionID == "" {
-		<div id="video-container" class="relative flex justify-center items-center w-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90">
-			<!-- Centered text -->
-			<span class="text-sm text-gray-500 font-mono">CHOOOOOSSESEEE FILEEE TO PLAYY</span>
-			<!-- Pinned to top-right -->
-			<span class="absolute top-3 left-4 text-xs text-gray-500 font-mono">🡑 Click here 🡑 </span>
-		</div>
-	} else {
-		<div
-			id="video-container"
-			hx-get={ fmt.Sprintf("/video/session/%s/heartbeat", sessionID) }
-			hx-trigger={ fmt.Sprintf("every %ds", triggerTime) }
-			class="flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90"
-		>
-			<div
-				id="video-player"
-				_="on waiting in .video-player log 'menu item clicked'"
-			>
-				<div class="flex flex-col items-center gap-2">
-					<span class="loading loading-spinner loading-lg text-primary"></span>
-					<span class="text-sm text-gray-400 font-mono">waito.............</span>
-				</div>
-			</div>
-		</div>
-	}
-}
-
-templ VideoPlayer(sessionID string) {
-	<div
-		id="video-player"
-		_="on waiting in .video log 'menu item clicked'"
-	>
-		<video
-			id="video"
-			playsinline
-			controls
-			class="bg-black/90 w-full h-full object-contain transform-gpu will-change-transform backface-hidden z-0 relative"
-		></video>
-		@InitVideoPlayer(fmt.Sprintf("/api/v1/video/session/%s/dash/manifest.mpd", sessionID))
-		<div class="flex flex-col items-center gap-2">
-			<span class="loading loading-spinner loading-lg text-primary"></span>
-			<span class="text-sm text-gray-400 font-mono">waito.............</span>
-		</div>
+templ VideoEmptyView() {
+	<div id="video-container" class="relative flex justify-center items-center w-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90">
+		<span class="text-sm text-gray-500 font-mono">CHOOOOOSSESEEE FILEEE TO PLAYY</span>
+		<span class="absolute top-3 left-4 text-xs text-gray-500 font-mono">🡑 Click here 🡑</span>
 	</div>
 }
 
-templ VideoPlayerReady(sessionID string) {
-	//NOTE: some how this shit just ping but it force need a swap or else it still swap it even when the headers contenttype not text/html? 
+templ VideoLoadingView(sessionID string) {
 	<div
 		id="video-container"
-		hx-post={ fmt.Sprintf("/api/v1/video/session/%s/heartbeat", sessionID) }
-		hx-trigger="every 10s"
-		hx-headers={ fmt.Sprintf(`{"X-Watch-Session": "%s"}`, sessionID) }
-		hx-swap="none"
-		class="flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b"
+		hx-get={ fmt.Sprintf("/video/session/%s", sessionID) }
+		hx-trigger="every 2s"
+		hx-swap="outerHTML"
+		class="flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90"
 	>
-		<video
-			id="video-player"
-			playsinline
-			controls
-			class="bg-black/90 w-full h-full object-contain transform-gpu will-change-transform backface-hidden z-0 relative"
-		></video>
-		@InitVideoPlayer(fmt.Sprintf("/api/v1/video/session/%s/dash/manifest.mpd", sessionID))
+		<div id="video-player">
+			<div class="flex flex-col items-center gap-2">
+				<span class="loading loading-spinner loading-lg text-primary"></span>
+				<span class="text-sm text-gray-400 font-mono">waito.............</span>
+			</div>
+		</div>
 	</div>
 }
 
-//https://reference.dashif.org/dash.js/nightly/samples/index.html
+templ VideoPlayingView(sessionID string) {
+	<div
+		id="video-container"
+		hx-get={ fmt.Sprintf("/video/session/%s/keepalive", sessionID) }
+		hx-trigger="every 10s"
+		hx-swap="none"
+		class="flex justify-center items-center w-full pb-4 pt-6 relative max-h-full aspect-video mx-auto overflow-hidden border-t border-b bg-black/90"
+	>
+		<video
+			id="video-element"
+			playsinline
+			controls
+			class="w-full h-full object-contain transform-gpu will-change-transform z-0 relative"
+		></video>
+		@InitVideoPlayer(fmt.Sprintf("/api/v1/video/session/%s/hls/stream/manifest.m3u8", sessionID))
+	</div>
+}
 
-script InitVideoPlayer(manifestUrl string) {
-    var videoElement = document.getElementById("video-player");
-    window.dashPlayer = window.dashjs.MediaPlayer().create();
-    window.dashPlayer.initialize(videoElement, manifestUrl, true);
+script InitVideoPlayer(url string) {
+    let v = document.getElementById('video-element');
+    if (Hls.isSupported()) {
+        var h = new Hls({ shouldRetry: () => true, fragLoadingMaxRetry: 1000, fragLoadingRetryDelay: 1000,});
+        h.loadSource(url)
+        h.attachMedia(v)
+        h.on('hlsError', (_, d) => d.fatal && h.startLoad());
+    } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+        v.src = url;
+    }
 }

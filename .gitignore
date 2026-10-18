@@ -42,7 +42,7 @@ config.yml
 node_modules
 logs/
 data/
-
+static/*.map
 # Editor/IDE
 # .idea/
 # .vscode/

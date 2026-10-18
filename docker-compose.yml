@@ -76,7 +76,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data       # <--- CHANGED THIS
       - ./stuff/TMDB_movie_dataset_v11.csv:/stuff/TMDB_movie_dataset_v11.csv
       - ./stuff/Torrents.csv:/stuff/Torrents.csv
       - ./stuff/torrent_match.csv:/stuff/torrent_match.csv
@@ -99,6 +99,7 @@ services:
 volumes:
   redisdata:
   gluetun-data:
+  pgdata:
 networks:
   internal:
     driver: bridge

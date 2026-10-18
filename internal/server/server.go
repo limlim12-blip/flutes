@@ -77,11 +77,14 @@ func New(cfg *config.Config) (*Server, error) {
 }
 func (s *Server) SetupHttpServer(handler http.Handler) {
 	s.httpServer = &http.Server{
-		Addr:        fmt.Sprintf(":%d", s.Config.HTTP.Port),
-		Handler:     handler,
-		ReadTimeout: time.Duration(s.Config.HTTP.ReadTimeout) * time.Second,
-		// WriteTimeout: time.Duration(s.Config.HTTP.WriteTimeout) * time.Second,
-		IdleTimeout: time.Duration(s.Config.HTTP.IdleTimeOut) * time.Second,
+		Addr:         fmt.Sprintf(":%d", s.Config.HTTP.Port),
+		Handler:      handler,
+		ReadTimeout:  2 * time.Hour,
+		WriteTimeout: 2 * time.Hour,
+		IdleTimeout:  120 * time.Second,
+		// ReadTimeout: time.Duration(s.Config.HTTP.ReadTimeout) * time.Second,
+		// // WriteTimeout: time.Duration(s.Config.HTTP.WriteTimeout) * time.Second,
+		// IdleTimeout: time.Duration(s.Config.HTTP.IdleTimeOut) * time.Second,
 	}
 }
 

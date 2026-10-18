@@ -105,7 +105,7 @@ func Layout(title string, metaTags, bodyContent templ.Component) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<link rel=\"dns-prefetch\" href=\"//fonts.googleapis.com\"><link rel=\"dns-prefetch\" href=\"//fonts.gstatic.com\"><link rel=\"preconnect\" href=\"//fonts.googleapis.com\" crossorigin><link rel=\"preconnect\" href=\"//fonts.gstatic.com\" crossorigin><link rel=\"manifest\" href=\"/static/manifest.webmanifest\"><link rel=\"apple-touch-icon\" href=\"/static/apple-touch-icon.png\"><link rel=\"shortcut icon\" href=\"/static/favicon.ico\" type=\"image/x-icon\"><link rel=\"icon\" href=\"/static/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"/static/favicon.png\" sizes=\"any\"><script src=\"https://cdnjs.cloudflare.com/ajax/libs/dashjs/4.7.4/dash.all.min.js\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><script src=\"https://unpkg.com/hyperscript.org\"></script><link href=\"https://fonts.googleapis.com/css2?family=Inter&display=swap\" rel=\"stylesheet\"><link href=\"/static/styles.css\" rel=\"stylesheet\"><script>\n                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {\n                    document.documentElement.setAttribute('data-theme', 'dark');\n                } else {\n                    document.documentElement.setAttribute('data-theme', 'light');\n                }\n                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {\n                    document.documentElement.setAttribute('data-theme', event.matches ? 'dark' : 'light');\n                });\n            </script><script src=\"/static/scripts.js\" defer></script><link rel=\"stylesheet\" href=\"/static/styles.css\"></head><body class=\"min-h-screen flex flex-col w-full m-0 p-0 text-black dark:text-white bg-white dark:bg-black border-black dark:border-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<link rel=\"dns-prefetch\" href=\"//fonts.googleapis.com\"><link rel=\"dns-prefetch\" href=\"//fonts.gstatic.com\"><link rel=\"preconnect\" href=\"//fonts.googleapis.com\" crossorigin><link rel=\"preconnect\" href=\"//fonts.gstatic.com\" crossorigin><link rel=\"manifest\" href=\"/static/manifest.webmanifest\"><link rel=\"apple-touch-icon\" href=\"/static/apple-touch-icon.png\"><link rel=\"shortcut icon\" href=\"/static/favicon.ico\" type=\"image/x-icon\"><link rel=\"icon\" href=\"/static/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"/static/favicon.png\" sizes=\"any\"><script src=\"https://cdnjs.cloudflare.com/ajax/libs/dashjs/4.7.4/dash.all.min.js\"></script><script src=\"https://unpkg.com/htmx.org@2.0.4\"></script><script src=\"https://unpkg.com/hyperscript.org\"></script><link href=\"https://fonts.googleapis.com/css2?family=Inter&display=swap\" rel=\"stylesheet\"><script src=\"https://cdn.jsdelivr.net/npm/hls.js@latest\"></script><link href=\"/static/styles.css\" rel=\"stylesheet\"><script src=\"/static/scripts.js\" defer></script></head>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -113,7 +113,7 @@ func Layout(title string, metaTags, bodyContent templ.Component) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<main id=\"main\" class=\"p-4 w-full h-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<body class=\"min-h-screen flex flex-col w-full m-0 p-0 text-black dark:text-white bg-white dark:bg-black border-black dark:border-white\"><main id=\"main\" class=\"p-4 w-full h-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -150,7 +150,7 @@ func Header() templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<header class=\"grid grid-cols-3 items-center w-full min-h-16 px-4 sticky top-0 z-50 dark:bg-gray-950\"><div class=\"flex justify-start\"><a class=\"px-3 py-2 text-xl dark:hover:shadow-olive-300\" href=\"/\">ftor</a></div><ul class=\"flex justify-center px-1 gap-3 font-bold italic underline\" hx-boost=\"true\"><li><a class=\"dark:hover:text-gray-600 hover:text-gray-400\" href=\"/\">Home</a></li><li><a class=\"dark:hover:text-gray-600 hover:text-gray-400\" href=\"/trending/tv/week\">TV</a></li></ul><div></div></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<header class=\"grid grid-cols-3 items-center w-full min-h-16 px-4 sticky top-0 z-50 dark:bg-gray-950\"><div class=\"flex justify-start\"><a class=\"px-3 py-2 text-xl dark:hover:shadow-olive-300\" href=\"/\">ftor</a></div><ul class=\"flex justify-center px-1 gap-3 font-bold italic underline\" hx-boost=\"true\" hx-target=\"#main\" hx-push-url=\"true\" hx-swap=\"innerHTML\"><li><a class=\"dark:hover:text-gray-600 hover:text-gray-400\" href=\"/\">Home</a></li><li><a class=\"dark:hover:text-gray-600 hover:text-gray-400\" href=\"/trending/type/tv/week\">TV</a></li></ul><div></div></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
