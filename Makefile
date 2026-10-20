@@ -17,6 +17,6 @@ l:
 	docker compose logs -f
 
 backup:
-	@mkdir -p /home/lim/Projects/backup/flute
-	docker exec -t golang-db-1 pg_dump -U postgres -F c -d postgres > /home/lim/Projects/backup/flute/postgres_backup_$$(date +%Y%m%d_%H%M%S).dump
+	@mkdir -p ./backup
+	docker exec -t golang-db-1 pg_dump -U postgres -F c -d postgres > ./backup/postgres_backup_$$(date +%Y%m%d_%H%M%S).dump
 	@echo "Database backed up"

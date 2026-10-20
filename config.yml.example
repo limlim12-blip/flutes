@@ -1,0 +1,25 @@
+env: development
+http:
+  port: 8080
+  read_timeout: 10
+  write_timeout: 15
+  idle_timeout: 60
+  cors_allowed_origins:
+    - "http://127.0.0.1:3000"
+db:
+  host: "db"
+  port: 5432
+  name: "postgres"
+  user: "postgres"
+  password: "postgres"
+  sll_mode: "disable"
+  max_open_conns: 20
+  max_idle_conns: 5
+  max_conn_lime_time: 300
+  max_conn_idle_time: 300
+redis:
+  port: 6379
+torrent:
+  max_memory_client: 2147483648 #2GB    1024^3*2
+  max_memory_crawler: 20971520 #20MB  1024*2*20
+  num_client: 3

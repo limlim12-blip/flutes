@@ -10,7 +10,7 @@ services:
       - /dev/net/tun:/dev/net/tun
     environment:
       - TZ=Asia/Ho_Chi_Minh
-      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_SERVICE_PROVIDER=${PROVIDER}
       - VPN_TYPE=wireguard
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       - SERVER_COUNTRIES=Singapore,Hong Kong,Taiwan,Japan
@@ -76,10 +76,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data       # <--- CHANGED THIS
+      - pgdata:/var/lib/postgresql/data       
       - ./stuff/TMDB_movie_dataset_v11.csv:/stuff/TMDB_movie_dataset_v11.csv
       - ./stuff/Torrents.csv:/stuff/Torrents.csv
-      - ./stuff/torrent_match.csv:/stuff/torrent_match.csv
 
   redis:
     image: redis:7-alpine
